@@ -1,0 +1,7 @@
+let id = fn(x) { x };
+
+let call = fn(f: fn(a) a, x: a) a {
+    f(x)
+};
+
+let main = call(id, 5);

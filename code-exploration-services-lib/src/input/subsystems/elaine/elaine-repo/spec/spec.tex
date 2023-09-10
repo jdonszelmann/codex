@@ -1,0 +1,752 @@
+\documentclass{article}
+\usepackage{proof}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{todonotes}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{background}{rgb}{0.96,0.97,0.98}
+\definecolor{gray}{rgb}{0.6,0.6,0.6}
+\definecolor{darkgray}{rgb}{0.4,0.4,0.4}
+\lstdefinelanguage{elaine}{
+    morekeywords={fn,let,handle,handler,elab,elaboration,true,false,effect,type,pub,mod,if,then,else,return}
+}
+\lstset{
+    mathescape,
+    basicstyle=\rmfamily,
+    keywordstyle=\bfseries\upshape,
+    columns=fullflexible,
+    literate={
+        {lambda}{$\lambda$}{1}
+    },
+    language=elaine
+}
+\lstdefinestyle{fancy}{
+    backgroundcolor=\color{background},
+    numbers=left,
+    numberstyle=\small\color{gray},
+    numbersep=10pt,
+    frame=l,
+    xleftmargin=16pt,
+    rulecolor=\color{darkgray},
+    framesep=4pt,
+    framextopmargin=8pt,
+    framexbottommargin=8pt,
+}
+
+\newcommand\kw[1]{\ensuremath{\mathbf{\mathtt{#1}}}}
+\newcommand\IS{\mathbin{\;::=\;}}
+\newcommand\OR{\mathbin{\;|\;}}
+
+% Syntax
+\newcommand\true{\kw{true}}
+\newcommand\false{\kw{false}}
+\newcommand\Bool[0]{\kw{Bool}}
+\newcommand\Int{\kw{Int}}
+\newcommand\String{\kw{String}}
+\newcommand\unit{\kw{()}}
+\newcommand\mylet{\kw{let}}
+
+\newcommand\fn{\kw{fn}}
+\newcommand\import{\kw{import}}
+\newcommand\type{\kw{type}}
+\newcommand\effect{\kw{effect}}
+\newcommand\handler{\kw{handler}}
+\newcommand\elaboration{\kw{elaboration}}
+\newcommand\return{\kw{return}}
+\newcommand\handle{\kw{handle}}
+\newcommand\elab{\kw{elab}}
+
+\newcommand\cond[3]{\kw{if}\;#1\;\kw{then}\;#2\;\kw{else}\;#3}
+\newcommand\lam[2]{\lambda #1\;.\;#2}
+
+\providecommand\given{}
+% can be useful to refer to this outside \Set
+\newcommand\SetSymbol[1][]{%
+  \nonscript\:#1\vert
+  \allowbreak
+  \nonscript\:
+  \mathopen{}}
+\DeclarePairedDelimiterX\Set[1]\{\}{%
+  \renewcommand\given{\;\SetSymbol[\delimsize]\;}
+  #1
+}
+\DeclarePairedDelimiterX\row[1]\langle\rangle{%
+  \renewcommand\given{\;\SetSymbol[\delimsize]\;}
+  #1
+}
+\DeclareMathOperator\set{set}
+\DeclarePairedDelimiter\Tuple()
+
+\renewcommand\S{\Set*}
+\newcommand\T{\Tuple*}
+
+\newcommand\under[0]{\;|\;}
+
+\newcommand\Gmod[0]{\Gamma_{\text{mod}}}
+
+\newcommand\step{\rightsquigarrow}
+\DeclareMathOperator*\ftv{ftv}
+\DeclareMathOperator*\exports{exports}
+
+\newcommand\question[1]{\todo[inline,backgroundcolor=blue!20!white]{#1}}
+\newcommand\remark[1]{\todo[inline,backgroundcolor=orange!40!white]{#1}}
+
+\let\oldinfer\infer
+\renewcommand\infer[2]{\oldinfer{#1}{\begin{gathered}#2\end{gathered}}}
+
+\allowdisplaybreaks[1]
+
+\title{Language Spec}
+\author{Terts Diepraam}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Goals}
+
+We describe a language with semantics similar to Koka and other languages with support for algebraic effects, but with elaborations. There are two related but orthogonal extensions over simple support for elaborations:
+\begin{itemize}
+\item inference of elaborations, and
+\item compiling the elaborations to handlers.
+\end{itemize}
+
+The first is to make it easier to work with elaborations and to incentivize using them statically, much like typeclasses or traits. The second allows us to define elaborations as sugar over algebraic effects. This makes it easy to add support for elaborations to languages and libraries with algebraic effects. In addition, it provides insight into how elaborations behave and the kind of transformation they encode. With the transformation, we show that a language with elaborations can be compiled using the techniques from Koka.
+
+\section{Informal description}
+
+This language features implicit elaborations for higher-order effects. Higher-order effects are prefixed with $!$ to distinguish them from first-order effects. Any higher-order elaborations in scope are applied with the \kw{elab} keyword. This means that while handlers for first-order effects are values, elaborations are not. A program consists of a list of modules. Declarations are private by default, unless prefixed with \kw{pub}. Declarations are order-dependent: only previous declarations can be accessed per module and only previous modules can be imported. This simplifies type checking to a single-pass and prevents cyclic dependencies. Unbound type identifiers are automatically type parameters. For simplicity, they can not be constrained nor annotated, but the types can be inferred. The execution order of expressions is left to right and functions have call by value semantics.
+
+In the sections below, the built-in type are restricted \kw{Bool} and \kw{()}. This is easily extended with strings, integers, floats and tuples. More complicated types (like lists) can be defined with custom types.
+
+\remark{In this model, elaborations are essentially typed macros that are resolved based on where elab is used, not where the macro is used. Might be an interesting link to make. Maybe the syntax of a ``macro call" should also be different from a function call (like Rust's $!$ suffix). If I use $x!$ for higher-order effects then it would even be symmetric between type identifier and usage. This might even be necessary to define the right order of operations in the semantics? At least, it makes it easier.}
+
+\question{Would partial elaboration ever be useful? I.e. only elaborate the higher-order effects for which an elaboration is in scope but leave the rest? Currently, my typing judgments say that all effects must be elaborated.}
+
+\section{Syntax definition}
+
+\begin{align*}
+    \text{program}\;p
+        \IS & m \dots m\\
+    \text{module}\;m
+        \IS & \kw{mod}\;x\;\{ d \dots d \}\\
+    \\
+    \text{declaration}\;d
+        \IS & \kw{pub}\;d'
+        \OR d'\\
+        \IS & \kw{let}\;x = e\\
+        \OR & \import\;x\\
+        \OR & \effect\;\phi\;\{s, \dots, s\}\\
+        \OR & \type\;x\;\{s, \dots, s\}
+    \\
+    \text{expression}\;e
+        \IS & x\\
+        \OR & () \OR \true \OR \false \\
+        \OR & \fn(x: T, \dots, x: T)\;\S{e} \\
+        \OR & \cond{e}{e}{e}\\
+        \OR & e(e,\dots, e) \\
+        \OR & x!(e, \dots, e) \\
+        \OR & \handler\;\{\return(x) \S{e}, o, \dots, o \}\\
+        \OR & \handle\;e\;e \\
+        \OR & \elaboration\;x! \to \Delta \;\{o, \dots, o\}\\
+        \OR & \elab[e]\;e\\
+        \OR & \elab\;e \\
+        \OR & \kw{let}\;x = e;\;e\\
+        \OR & \{ e \}\\
+    \\
+    \text{signature}\;s
+        \IS & x (T, \dots, T)\;T\\
+    \text{effect clause}\;o
+        \IS & x(x, \dots, x)\;\S{ e }\\
+    \\
+    \text{type scheme}\;\sigma
+        \IS & T \OR \forall \alpha.\sigma\\
+    \text{type}\; T
+        \IS & \Delta\;\tau \\
+    \text{value type}\;\tau
+        \IS & x 
+        \OR ()
+        \OR \Bool \\
+        \OR & (T,\dots, T) \to T \\
+        \OR & \kw{handler}\;x\;\tau\;\tau \\
+        \OR & \kw{elaboration}\;x!\;\Delta \\
+    \text{effect row}\;\Delta
+        \IS & \row{} \OR  x \OR \row{\phi|\Delta}\\
+    \text{effect}\;\phi \IS & x \OR x!
+\end{align*}
+
+\section{Typing judgments}
+
+The context $\Gamma = (\Gamma_M, \Gamma_V, \Gamma_E, \Gamma_\Phi)$ consists of the following parts:
+\begin{align*}
+    \Gamma_M &: x \to (\Gamma_V, \Gamma_E, \Gamma_\Phi) & \text{module to context}\\
+    \Gamma_V &: x \to \sigma & \text{variable to type scheme}\\
+    \Gamma_E &: x \to (\Delta, \S{f_1, \dots, f_n}) & \text{higher-order effect to elaboration type}\\
+    \Gamma_\Phi &: x \to \S{s_1,\dots,s_n} & \text{effect to operation signatures}
+\end{align*}
+
+\remark{A $\Gamma_T$ for data types might be added.}
+
+Whenever one of these is extended, the others are implicitly passed on too, but when declared separately, they not implicitly passed. For example, $\Gamma''$ is empty except for the single $x: T$, whereas $\Gamma'$ implicitly contains $\Gamma_M$, $\Gamma_E$ \& $\Gamma_\Phi$.
+\[ \Gamma'_V = \Gamma_V, x: T \qquad \Gamma''_V = x: T \]
+
+If the following invariants are violated there should be a type error:
+
+\begin{itemize}
+    \item The operations of all effects in scope must be disjoint.
+    \item Module names are unique in every scope.
+    \item Effect names are unique in every scope.
+\end{itemize}
+
+\subsection{Effect row semantics}
+
+We treat effect rows as multisets. That means that the row $\row{A, B, B, C}$ is simply the multiset $\S{A, B, B, C}$. The $|$ symbol signifies extension of the effect row with another (possibly arbitrary) effect row. The order of the effects is insignificant, though the multiplicity is. We define the operation $\set$ as follows:
+\begin{align*}
+    \set(\varepsilon) = \set(\row{}) &= \emptyset\\
+    \set(\row{A_1, \dots, A_n}) &= \S{A_1, \dots, A_n}\\
+    \set(\row{A_1, \dots, A_n|R}) &= \set(\row{A_1, \dots, A_n}) + \set(R).
+\end{align*}
+
+Note that the extension uses the sum, not the union of the two sets. This means that $\set(\row{A | \row{A}})$ should yield $\S{A, A}$ instead of $\S{A}$.
+
+Then we get the following equality relation between effect rows $A$ and $B$:
+\[ A \cong B \iff \set(A) = \set(B). \]
+In typing judgments, the effect row is an overapproximation of the effects that actually used by the expression. We freely use set operations in the typing judgments, implicitly calling the the $\set$ function on the operands where required. An omitted effect row is treated as an empty effect row ($\row{}$).
+
+Any effect prefixed with a $!$ is a higher-order effect, which must elaborated instead of handled. Due to this distinction, we define the operations $H(R)$ and $A(R)$ representing the higher-order and first-order subsets of the effect rows, respectively. The same operators are applied as predicates on individual effects, so the operations on rows are defined as:
+\[ 
+    H(\Delta) = \S{ \phi \in \Delta \given H(\phi) }
+    \qquad
+    \text{and}
+    \qquad
+    A(\Delta) = \S{ \phi \in \Delta \given A(\phi) }.
+\]
+
+\subsection{Type inference}
+
+We have the usual generalize and instantiate rules. But, the generalize rule requires an empty effect row.
+
+\question{Koka requires an empty effect row. Why?}
+
+\begin{gather*}
+    \infer{
+        \Gamma \vdash e : \forall \alpha. \sigma
+    }{
+        \Gamma \vdash e : \sigma
+        \qquad
+        \alpha \not\in \ftv(\Gamma)
+    }
+    \qquad
+    \infer{
+        \Gamma \vdash e : \sigma[\alpha \mapsto T']
+    }{
+        \Gamma \vdash e : \forall \alpha. \sigma
+    }
+\end{gather*}
+
+Where $\ftv$ refers to the free type variables in the context.
+\\
+\question{Let's see if I get this: in the generalize rule, we abstract over some unbound name, which makes so that we don't need explicit parameters. We have to check that the variable does not refer to any of the datatypes in the context. So custom data types must be in that context.}
+
+\question{Is this all we need? I think so, because if we now have any effect row extended by an arbitrary effect row, we can match it to any effect row that includes the necessary effects.}
+
+\subsection{Expressions}
+We freely write $\tau$ to mean that a type has an empty effect row. That is, we use $\tau$ and a shorthand for $\row{}\;\tau$. The $\Delta$ stands for an arbitrary effect row. We start with everything but the handlers and elaborations and put them in a separate section.
+\\
+\remark{It's possible to use the braces as a syntax for computations, which is kinda like Koka. The current use is more like Rust's braces. Since the rules for it are so simple, I'm ignoring it for semantics.}
+
+\begin{gather*}
+    \infer{
+        \Gamma \vdash x : \Delta\;\tau
+    }{
+        \Gamma_V(x) = \Delta\;\tau
+    }
+    \qquad
+    \infer{
+        \Gamma \vdash \S{e} : \Delta\;\tau
+    }{
+        \Gamma \vdash e : \Delta\;\tau
+    }
+    \qquad
+    \infer{
+        \Gamma \vdash \kw{let}\;x = e_1; e_2 : \Delta\;\tau'
+    }{
+        \Gamma \vdash e_1 : \Delta\;\tau
+        \qquad
+        \Gamma_V, x: \tau \vdash e_2 : \Delta\;\tau'
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \unit: \Delta\;\unit
+    }{}
+    \qquad
+    \infer{\Gamma \vdash \true : \Delta\;\Bool}{}
+    \qquad
+    \infer{\Gamma \vdash \false : \Delta\;\Bool}{}
+    \\\\
+    \infer{
+        \Gamma \vdash \fn(x_1: T_1,\dots,x_n: T_n)\;T\; \{e\}: \Delta\;(T_1,\dots, T_n) \to T
+    }{
+        \Gamma_V, x_1: T_1, \dots, x_n: T_n \vdash c : T
+        \qquad
+        T_i = \row{} \tau_i
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \cond{e_1}{e_2}{e_3} : \Delta\;\tau
+    }{
+        \Gamma \vdash e_1 : \Delta\;\Bool
+        \qquad
+        \Gamma \vdash e_2 : \Delta\;\tau
+        \qquad
+        \Gamma \vdash e_3 : \Delta\;\tau
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash e(e_1, \dots, e_n): \Delta\;\tau
+    }{
+        \Gamma \vdash e: (\tau_1, \dots, \tau_n) \to \Delta\;\tau
+        \qquad
+        \Gamma \vdash e_i : \Delta\;\tau_i
+    }
+\end{gather*}
+
+\subsection{Declarations and Modules}
+
+The modules are gathered into $\Gamma_M$ and the variables that are in scope are gathered in $\Gamma_V$. Each module has a the type of its public declarations. Note that these are not accumulative; they only contain the bindings generated by that declaration. Each declaration has the type of both private and public bindings. Without modifier, the public declarations are empty, but with the \kw{pub} keyword, the private bindings are copied into the public declarations. 
+
+\begin{gather*}
+    \infer{
+        \Gamma_0 \vdash m_1\dots m_n: ()
+    }{
+        \Gamma_{i-1} \vdash m_i: \Gamma_{m_i}
+        \qquad
+        \Gamma_{M,i} = \Gamma_{M,i-1}, \Gamma_{m_i}
+    }
+    \\\\
+    % module
+    \infer{
+        \Gamma_0 \vdash \kw{mod}\;x\;\S{ d_1 \dots d_n }: (x: \Gamma)
+    }{
+        \Gamma_{i-1} \vdash d_i : (\Gamma'_i; \Gamma'_{\text{pub}, i})
+        \qquad
+        \Gamma_i = \Gamma_{i-1}, \Gamma'_i
+        \qquad
+        \Gamma \vdash \Gamma'_{\text{pub},1}, \dots, \Gamma'_{\text{pub},n}
+    }
+    \\\\
+    % private declaration
+    \infer{
+        \Gamma \vdash d : (\Gamma'; \varepsilon)
+    }{
+        \Gamma \vdash d : \Gamma'
+    }
+    \qquad
+    % public declaration
+    \infer{
+        \Gamma \vdash \kw{pub}\;d : (\Gamma'; \Gamma')
+    }{
+        \Gamma \vdash d : \Gamma'
+    }
+    \qquad
+    % Import
+    \infer{
+        \Gamma \vdash \import\;x : \Gamma_M(x)
+    }{}
+    \\\\
+    % Type declaration
+    \infer{
+        \Gamma \vdash \type\;x \;
+        \{ x_1(\tau_{1,1}, \dots, \tau_{1,n_1}), \dots, x_m(\tau_{m,1}, \dots, \tau_{m,n_m}) \} : \Gamma'
+    }{
+        f_i = \forall \alpha. (\tau_{i,1}, \dots, \tau_{i,n_i}) \to \alpha\;x
+        \\
+        \Gamma'_V = x_1: f_1,\dots,x_m: f_m
+    }
+    \\\\
+    % Global value
+    \infer{
+        \Gamma \vdash \kw{let}\;x = e : (x: T)
+    }{
+        \Gamma \vdash e : T
+    }
+\end{gather*}
+
+\subsection{First-Order Effects and Handlers}
+Effects are declared with the \kw{effect} keyword. The signatures of the operations are stored in $\Gamma_\Phi$. The types of the arguments and resumption must all have no effects.
+
+A handler must have operations of the same signatures as one of the effects in the context. The names must match up, as well as the number of arguments and the return type of the expression, given the types of the arguments and the resumption. The handler type then includes the handled effect $\phi$, an ``input'' type $\tau$ and an ``output'' type $\tau'$. In most cases, these will be at least partially generic.
+
+The handle expression will simply add the handled effect to the effect row of the inner expression and use the the input and output type.
+
+\begin{gather*}
+    % first-order (algebraic) effect
+    \infer{
+        \Gamma \vdash \kw{effect}\;x\;\S{s_1, \dots, s_n}: \Gamma'
+    }{
+        s_i = op_i(\tau_{i,1},\dots, \tau_{i,n_i}): \tau_i
+        \qquad
+        \Gamma'_\Phi(x) = \S{s_1, \dots, s_n}
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \handle\;e_h\;e_c : \Delta\;\tau'
+    }{
+        \Gamma \vdash e_h : \handler\;\phi\;\tau\;\tau'
+        \qquad
+        \Gamma \vdash e_c : \row{\phi | \Delta}\;\tau
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \handler\;\S{ \return(x) \S{ e_{\text{ret}} }, o_1, \dots, o_n }
+        : \handler\;\phi\;\tau\;\tau'
+    }{
+        A(\phi)
+        \qquad
+        \Gamma_\Phi(\phi) = \S{ s_1, \dots, s_n }
+        \qquad
+        \Gamma, x: \tau \vdash e_{\text{ret}} : \tau' 
+        \\
+        \left[
+            \begin{gathered}
+                s_i = x_i(\tau_{i,1}, \dots, \tau_{i,m_i}) \to \tau_i
+                \qquad
+                o_i = x_i(x_{i,1}, \dots, x_{i,m_i})\;\S{ e_i }
+                \\
+                \Gamma_V, resume : (\tau_i) \to \tau', x_{i,1}: \tau_{i,1}, \dots, x_{i,i_m}: \tau_{i,i_m} 
+                \vdash e_i: \tau'
+            \end{gathered}
+        \right]_{1\leq i\leq n}
+    }
+\end{gather*}
+
+\subsection{Higher-Order Effects and Elaborations}
+
+The declaration of higher-order effects is similar to first-order effects, but with exclamation marks after the effect name and all operations. This will help distinguish them from first-order effects.
+
+Elaborations are of course similar to handlers, but we explicitly state the higher-order effect $x!$ they elaborate and which first-order effects $\Delta$ they elaborate into. The operations do not get a continuation, so the type checking is a bit different there. As arguments they take the effectless types they specified along with the effect row $\Delta$. Elaborations are not added to the value context, but to a special elaboration context mapping the effect identifier to the row of effects to elaborate into.
+\\
+\remark{Later, we could add more precise syntax for which effects need to be present in the arguments of the elaboration operations.}
+
+The elab expression then checks that a elaboration for all higher-order effects in the inner expression are in scope and that all effects they elaborate into are handled.
+\\
+\remark{It is not possible to elaborate only some of the higher-order effects. We could change the behaviour to allow this later.}
+
+\begin{gather*}
+    % higher-order effect
+    \infer{
+        \Gamma \vdash \kw{effect}\;x!\;\S{s_1, \dots, s_n}: \Gamma'
+    }{
+        s_i = op_i!(\tau_{i,1}, \dots, \tau_{i,n_i}): \tau_i
+        \qquad
+        \Gamma'_\Phi(x!) = \S{s_1, \dots, s_n}
+    }
+    \\\\
+    % Elaboration
+    \infer{
+        \Gamma \vdash \elaboration\;x! \to \Delta\;\S{o_1, \dots, o_n} : \Gamma'
+    }{
+        \Gamma_\Phi(x!) = \S{s_1, \dots, s_n}
+        \qquad
+        \Gamma'_E(x!) = \Delta
+        \\
+        \left[
+            \begin{gathered}
+                s_i = x_i!(\tau_{i,1}, \dots, \tau_{i,m_i})\;\tau_i \qquad o_i = x_i!(x_{i,1}, \dots, x_{i,m_i}) \S{ e_i }
+                \\
+                \Gamma,x_{i,1}: \Delta\;\tau_{i,1},\dots,x_{i,n_i}: \Delta\;\tau_{i,n_i} \vdash 
+                e_i : \Delta\;\tau_i
+            \end{gathered}
+        \right]_{1\leq i \leq n}
+            }
+    \\\\
+    % Elab
+    \infer{
+        \Gamma \vdash \elab\;e : \Delta\;\tau
+    }{
+        \big[
+            \Gamma_E(\phi) \subseteq \Delta
+        \big]_{\phi \in H(\Delta')}
+        \qquad
+        \Gamma \vdash e : \Delta'\;\tau
+        \qquad
+        \Delta = A(\Delta')
+    }
+    \\\\
+\end{gather*}
+
+\section{Desugaring}
+
+Before we move on to semantics, we remove some of the typing information and higher-level features by desugaring.
+
+To desugar fold the operation $D$ over the syntax tree of an expression, where $D$ is defined by the following equations:
+
+\begin{align*}
+    D(\fn(x_1: T_1, \dots, x_n: T_n)\;T\;\{e\}) &= \lambda x_1,\dots,x_n . e \\
+    D(\kw{let} x = e_1; e_2) &= (\lambda x . e_2)(e_1)\\
+    D(\S{e}) &= e\\
+    D(e) &= e
+\end{align*}
+
+\section{Semantics}
+
+\info{I'm only specifying the expression reduction. The declarations should be fairly self-explanatory, because they are basically the same as the typing rules, but with values instead of values.}
+
+Some informal remarks:
+
+\begin{itemize}
+    \item Evaluation order is from left to right.
+    \item The syntax does not yet have a value sort, so just assume that booleans, unit, integers, strings and handlers are values. Functions are not values directly, but the corresponding lambda expression is.
+    \item $op!(\dots)$ calls behave like macros. Otherwise we never assign computations to variables.
+    \item The rest is fairly standard Koka-like semantics.
+    \item The choice to make $\elab$elaborate all higher-order effects is paying off, because it makes the $X_{op}$ case for $\elab$easy.
+\end{itemize}
+
+\subsection{Reduction contexts}
+
+There are two very similar contexts, one for general expressions and one that does not go through handlers, to find the only the operations that a handler can use. Note that there is only one rule involving $op!$ calls, that's because they are call by name and not call by value (they are macro-like in that sense).
+
+\begin{align*}
+    E
+        \IS & [] \OR E(e_1,\dots, e_n) \OR v(v_1,\dots,v_n,E,e_1,\dots,e_m) \\
+        \OR & \cond{E}{e}{e} \\
+        \OR & \kw{let} x = E; e \\
+        \OR & \handle E e \OR \handle v E \\
+        \OR & \elab E \\
+    X_{op}
+        \IS & [] \OR X_{op}(e_1, \dots, e_n) \OR v(v_1, \dots, v_n, X_{op}, e_1, \dots, e_m) \\
+        \OR & \cond{X_{op}}{e_1}{e_2} \\
+        \OR & \kw{let} x = X_{op}; e \\
+        \OR & \handle{X_{op}}{e} \OR \handle{h}{X_{op}} \text{ if } op\not\in h \\
+        \OR & \elab X_{op} \text{ if } A(op)
+\end{align*}
+
+\subsection{Elaboration resolution}
+\todo[inline]{Elaboration resolution}
+
+\subsection{Reduction rules}
+
+If I understand correctly, the $\delta$ rule is to define built-ins and constants, or something. Anyway it's probably useful.
+
+\newcommand{\reduce}{\quad\longrightarrow\quad}
+\begin{align*}
+    c(v_1, \dots, v_n) \reduce& \delta(c, v_1, \dots, v_n) \\
+    &\qquad\text{if } \delta(c, v_1, \dots, v_n) \text{ defined}\\
+    (\lambda x_1, \dots, x_n . e) (v_1, \dots, v_n) \reduce& e[x_1 \mapsto v_1, \dots, x_n \mapsto v_n] \\
+    \cond{\true}{e_1}{e_2} \reduce& e_1 \\
+    \cond{\false}{e_1}{e_2} \reduce& e_2 \\
+    \\
+    \handle{h}{v} \reduce& e[x\mapsto v] \\
+    &\qquad\text{where } \return(x) \S{ e } \in h\\
+    \handle{h}{(X_{op}[op(v_1, \dots, v_n)])} \reduce& e[x_1\mapsto v_1, \dots, x_n\mapsto v_n, resume \mapsto k] \\
+    &\qquad \text{where } \begin{aligned}[t]
+        & op(x_1, \dots, x_n) \S{e} \in h\\
+        & k = \lam{y}{\handle h (X_{op}[y])}
+    \end{aligned}\\
+    \elab v \reduce& v\\
+    \elab (X_{op!}[op!(e_1, \dots, e_n)]) \reduce& \elab X_{op!}[e[x_1 \mapsto e_1, \dots, x_n \mapsto e_n]] \\
+    &\qquad \text{where } op!(x_1, \dots, x_n) \S{e} \in \Gamma_E \\
+\end{align*}
+
+We need some sort of context for the elaborations, because they are implicit. Assume that it's populated with the elaborations that are in scope.
+
+\section{Desugaring/Compilation of Elaborations}
+
+We want to define a transformation which removes all elaborations from the program, while retaining the semantics.
+
+\subsection{The Syntax Approach}
+Silly idea 1:
+\begin{itemize}
+\item Wrap everything in elabs recursively.
+\item This removes a ``scope": each elab now only goes one level deep.
+\item Then we fold over this, by applying modified versions of each elab.
+\end{itemize}
+Silly idea 2:
+\begin{itemize}
+    \item We distribute each elab down using some algebraic laws
+    \item We need to prove those or take them from the hefty algebras paper?
+    \item Which means only higher-order operations are wrapped in elab
+    \item Now, we can use the same rule as our operational semantics to reduce the elab/operation combo.
+    \item This is great because if we prove first laws to be equivalent in semantics, then we're only left with the same rule applied at different times. 
+\end{itemize}
+
+Each elab below is resolved and carries the elaborations that it performs.
+
+\newcommand\To{\Rightarrow}
+\begin{align*}
+    T(\elab[x]{x}) &\To x\\
+    T(\elab[x]{\unit}) &\To \unit\\
+    T(\elab[x]{\true}) &\To \true\\
+    T(\elab[x]{\false}) &\To \false\\
+    T(\elab[x]{\lambda x_1,\dots,x_n . e}) &\To \lambda x_1,\dots,x_n . e\\
+    T(\elab[x]{\cond{e_1}{e_2}{e_3}}) &\To \cond{\elab[x]{e_1}}{\elab[x]{e_2}}{\elab[x]{e_3}}\\
+    T(\elab[x]{e(e_1,\dots,e_n)}) &\To (T'(\elab[x]{e}))(\elab[x]{e_1},\dots,\elab[x]{e_n})\\
+    T(\elab[x]{\handler{\return(x) \{e\}, s_1 \{e_1\}, \dots, s_n \{e_n\}}}) &\To \handler{\return(x) \{\elab{e}\}, s_1 \{\elab{e_1}\}, \dots, s_n \{\elab{e_n}\}}\\
+    T(\elab[x]{\handle{e_1}{e_2}}) &\To \handle{\elab[x]{e_1}}{\elab[x]{e_2}}\\
+    T(e) &\To e\\
+    \\
+    T'(\elab[x]{\lam{x_1,\dots,x_n}{e}}) &= \lambda x_1,\dots,x_n . T(\elab[x]{e})\\
+    T'(e) &= T(e)
+\end{align*}
+
+Both $T$ and $T'$ are folds i don't know how to write that nicely.
+
+Note that $\elab[x]{x!(e_1,\dots,e_n)}$ is the only expression wrapped in an \elab that is preserved. So now we can elaborate those (assuming that by well-typedness $\elab[x]$ contains the elaboration for $x!$). Under this assumption, the reduction rule for elab becomes:
+\begin{align*}
+    \elab[\Gamma]{x!(e_1, \dots, e_n)} \reduce& \elab[\Gamma]{e[x_1\mapsto e_1, \dots, x_n\mapsto e_n]}\\
+    &\qquad\text{where } x!(x_1, \dots, x_n)\;e \in \Gamma
+\end{align*}
+Because we are just applying the rule from the reduction semantics, this is guaranteed to preserve semantics\todo{Is this always true? Is there known proof for this?}.
+
+Now we repeat this operation until there are no more elabs in the program.
+
+If we now show that each of these operations preserve semantics, we prove that the entire compilation procedure preserves semantics.
+
+\textbf{So that was a dead end.}
+
+The problem lies with the following case:
+
+\begin{lstlisting}
+elab { elab { lambda x. x() } (lambda x. a!()) }
+\end{lstlisting}
+
+First not how, if we just return a lambda value, no elaboration takes place in the body, because the lambda is not evaluated in that context. So $\elab[1]{}$ does not elaborate $a!$, but, it should, because the lambda with $a!$ is passed to the other lambda and applied within $\elab[1]{}$. Hence, figuring out which elaboration should be applied to each operation becomes a whole program analysis and is therefore infeasible.
+
+\subsection{The Type Approach}
+
+It turns out that there is a correlation between the types and which elaborations should be applied. Take the previous example. If we add unique identifiers to each higher-order operation, we get:
+
+\begin{lstlisting}
+elab { elab { lambda x. x() } (lambda x. $a_1$!()) }
+\end{lstlisting}
+
+Now we add those identifiers to the effect row. So the type for $a_1!()$ is $\row{A!: \S{1}} ()$ and we keep those identifiers throughout the type analysis. The type of the subexpression of $\elab[1]{}$ is then also $\row{A!: \S{1}} ()$ and we can substitute the each indentifier in the effect row with the elaboration.
+
+This works quite well, because it will always find an appropriate elaboration, but it still breaks down.
+
+The problem is that one operation in the syntax tree might be associated with multiple elaborations. Take this program for example:
+
+\begin{lstlisting}
+elab[1]{
+    let g = elab [2]{
+        let f = lambda x . a!()
+        if k then
+            f
+        else {
+            let r = f()
+            lambda x . ()
+        }
+    }
+    g()
+}
+\end{lstlisting}
+
+Following the type analysis we just established, the subexpression of $\elab[2]{}$ has the type:
+\[
+    \row{A!: \S{1}} \Big(\unit \to \row{A!: \S{1}} \unit\Big).
+\]
+
+The identifier $1$ shows up multiple times in the signature and could therefore be elaborated by either $\elab[1]$ or $\elab[2]$, depending on the value of $k$. This means that it's impossible in general to find a unique elaboration for each operation in the program, which definitely throws a wrench in our plans.
+
+Of course, we could still remove \emph{most} higher-order effects with this approach, as long as the identifiers are unique in signature.
+
+\subsection{The Handler Approach}
+
+So now we know that some elaborations need to be determined at runtime, but that does not mean that we can't desugar them. The idea is as follows.
+
+Let's see what we learned from the previous attempt: figuring out the right elaboration is hard (or impossible), but elab and handle use very similar reduction semantics, so we might be able to exploit that.
+
+So we leave the ``decision" on the elaboration to the runtime evaluation. Imagine a function that takes an elaboration identifier and evaluates the result of applying that elaboration. Now we just need some way to determine which elaboration to apply. We can use (algebraic) effects for that, because of the similar reduction semantics.
+
+Say we have an effect $A!$ with operation $a!$ and elaborations $E_1, \dots, E_N$. Let $E_i[a!(\dots)]$ be the elaboration of $a!$ by $E_i$. We then substitute each operation $a!(\dots)$ with
+
+\begin{lstlisting}[language=elaine]
+{
+    let e = $ask_{A!}$()
+    if eq(e, 1) then $E_1$[a!(...)]
+    else if eq(e, 2) then $E_2$[a!(...)]
+    ...
+    else if eq(e, N-1) then $E_{N-1}$[a!(...)]
+    else $E_N$[a!(...)]
+}
+\end{lstlisting}
+\todo[inline]{We might need to make $e$ a unique variable here. It could of course also be inlined, but this clearer for demonstration purposes.}
+Note that this expression depends on the subexpression of the operation. It cannot be expressed as a function, only as a macro, but those are not in the language.
+
+Then, we substitute each $\elab e$ with an elaboration $E_i$ with
+\begin{lstlisting}
+handle $H_{A!}$(i) {e}
+\end{lstlisting}
+where $H$ is defined as
+\begin{lstlisting}
+let $H_{A!}$ = lambda i . handler {
+    return(x) {x}
+    $ask_{A!}$() { resume(i) }
+}
+\end{lstlisting}
+
+The $ask$ operation is used to evoke the semantics of the reader effect (without $local$, so just the algebraic part). It essentially checks what handler is being used.
+
+From here, we can then simplify if we want to by reasoning about which handlers apply in which situations, but that is not necessary.
+
+Of course, $\elab$ could elaborate multiple effects, which means that it would compile to nested handlers.
+
+\remark{Alternatively, there is a single $Elab$ effect, with an operation $ask$ which takes two arguments: the higher-order effect indentifier and the elaboration identifier. It remains to be seens which one is easier. The semantics should be equivalent.}
+
+What's nice about this approach is that it is purely local and it exploits the similarities between the evaluation of handlers and elaborations. It does not require a full analysis of the program. It only requires collecting all the elaborations and giving them unique identifiers.
+
+What's weird is that this adds additional effects, so we need some additional arguments to prove that the transformation is not just correct but also well-typed. Proving the operational semantics equivalent should be fairly straightforward though, because handlers and elaborations depend on the same context in the reduction semantics.
+
+Another cool thing here is that $\elab$ can be partial, i.e. elaborate only some effects, not all of them.
+
+This could still be combined with the type approach, where the type approach is applied when the elaboration is unambiguous and the handler approach is used as fallback in more difficult cases. But that means that we would have to prove both approaches correct (and their combination), which is much harder of course.
+
+\textbf{This approach also fails because it cannot deal with variables inside the elaboration which are defined outside of the elaboration.}
+
+\subsection{The Second Handler Approach}
+
+So, new approach. This approach is based on the fact that we could implement elaborations in a dictionary-passing-like style, much like typeclasses. Tiny problem: we don't have dictionaries. But here we go.
+
+\begin{figure}[h]
+\begin{tabular}{rcl}
+\lstinline|elab[$e_1$] {$e_2$}|
+& $\implies$
+& \lstinline|handle $e_1$ {$e_2$}|
+\\\\
+\begin{lstlisting}
+elaboration {
+    $op_1!(x_{1,1}, ..., x_{k_1,1})$ { $e_1$ }
+    ...
+    $op_n!(x_{1,n}, ..., x_{k_n,n})$ { $e_n$ }
+}
+\end{lstlisting}
+&$\implies$
+&\begin{lstlisting}
+handler {
+    $op_1(x_{1,1}, ..., x_{k_1,1})$ {
+        resume($e_1$[$x_{i,1} \mapsto x_{i,1}()$])
+    }
+    ...
+    $op_n(x_{1,n}, ..., x_{k_n,n})$ {
+        resume($e_1$[$x_{i,n} \mapsto x_{i,n}()$])
+    }
+}
+\end{lstlisting}
+\\\\
+\lstinline|$op_j$!($e_1,...,e_k$)|
+& $\implies$
+& \lstinline|$op_j$(lambda. $e_1$, ..., lambda. $e_k$)|
+\end{tabular}
+\end{figure}
+
+The idea here is simple, even more simple than previous approaches, but it makes elaborations kind of useless maybe? Why do we need them if we can just do this? Guess I'll have to implement it to show it makes sense.
+
+The idea is as follows: we thunk all the expressions and change occurrences of the variables with function calls, meaning we can use a handler. But elaborations always resume.
+
+This also makes me think we don't need functions and variables if you can just represent them as operations, which is, ehm, interesting.
+
+\end{document}

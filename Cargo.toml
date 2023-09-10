@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "code-exploration-services",
+    "code-exploration-services-lib",
+    "code-exploration-services-tests",
+    "lines-inclusive",
+#    "sources",
+    "raproxy",
+]
+default-members = ["code-exploration-services", "code-exploration-services-lib"]
+
+[workspace.dependencies]
+thiserror = "1.0.40"
+serde = {version="1.0.160", features=["derive"]}
+tracing = "0.1.37"
+itertools = "0.10.5"

@@ -1,0 +1,19 @@
+use std;
+
+effect Foo! {
+    foo!() Int
+}
+
+effect Bar! {
+    bar!() String
+}
+
+let ef = elaboration Foo! -> <> {
+    foo!() { 23 }
+};
+
+let eb = elaboration Bar! -> <> {
+    bar!() { "The answer is: " }
+};
+
+let main = elab concat(bar!(), show_int(foo!()));

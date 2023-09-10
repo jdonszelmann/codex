@@ -1,0 +1,16 @@
+\chapter{Introduction}\label{chap:introduction}
+
+As a program runs, it usually interacts with its environment. A function might, for example, allocate some memory, open a file or throw an exception. Apart from producing a value, such a procedure therefore also has some other observable \emph{effects}.
+
+Programming languages often have special features for some of these effects, such as exceptions, coroutines and capabilities. While these features might seem very different on the surface, they have an important common property: they give away control to some other procedure and are handed back control later. This procedure could be a memory allocator, a scheduler, the kernel, an exception handler or something else that implements the necessary operations to perform the effect.
+
+% spell-checker:ignore effekt
+The theory of \emph{algebraic effects} unifies many effects into a single concept \autocite{goos_adequacy_2001, castagna_handlers_2009}. Here, effectful computations can only be used within \emph{effect handlers}, which the computation yields control to. A handler can then in turn call the continuation of the computation. In recent years, some languages (e.g. Koka \autocite{leijen_koka_2014}, Eff \autocite{bauer_programming_2015}, Frank \autocite{lindley_be_2017}, and Effekt \autocite{brachthauser_effects_2020}) have been created with support for algebraic effects. These languages allow the programmer to define new effects without needing a whole new language feature. Moreover, these languages often feature type systems that can reason about the effects in each function.
+
+However, there are some common patterns of effects that cannot be represented as algebraic effects, namely \emph{higher-order effects}. That is, effects whose operations that take effectful computations as arguments. To overcome this limitation, \textcite{bach_poulsen_hefty_2023} have extended algebraic effects with \emph{hefty algebras}. To support higher-order effects, they introduced \emph{effect elaborations} in addition to handlers.
+
+In this thesis, we introduce a novel programming language called \emph{Elaine}. Like Koka and other languages with support for algebraic effects, Elaine supports effect rows and handlers. Unlike those languages, Elaine additionally also supports elaborations and higher-order effects. We define the syntax, reduction semantics and type system of Elaine and provide a full implementation of the language in Haskell\footnote{available at \url{https://github.com/tertsdiepraam/thesis/tree/main/elaine}}. This implementation includes a parser, type checker, pretty printer and type checker. Additionally, we introduce a novel feature that allows elaborations to be inferred to reduce the syntactic overhead of elaborations.
+
+Finally, we give a transformation from higher-order effects to algebraic effects. This transformation shows that elaborations can be added to existing languages and libraries for effects with relative ease.\todo{Maybe even more implications?}
+
+With Elaine, we argue that elaborations are a natural and easy representation of higher-order effects with a set of example programs.

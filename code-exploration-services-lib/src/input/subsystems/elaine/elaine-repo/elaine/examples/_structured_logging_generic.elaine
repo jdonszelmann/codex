@@ -1,0 +1,165 @@
+# TODO for this all to parse:
+#  - handle & elab
+#  - handle & elab types
+
+mod Main {
+    # Consider the following effects:
+    effect !Write {
+        write(text: str): ()
+    }
+    
+    # Elaborates into !Write
+    effect !!Log {
+        context(name: str, c: a !e): a !e
+        log(text: str) 
+    }
+
+    # The intended effect is to create structured logging, where each line is
+    # prefixed with a context.
+    # So it might look like this:
+    fn main(): !!Log {
+        context("main", {
+            a <- log("msg1")
+            a <- context("foo", {
+                log("msg2")
+            });
+            context("bar", {
+                log("msg3")
+            })
+        })
+    }
+    # Which would create the following output when elaborated handled:
+
+    # ```
+    # main: msg1
+    # main::foo: msg2
+    # main::bar: msg3
+    # ```
+
+    # Note: this is quite similar to the Reader effect with `local` operation
+
+    # So far, that's easy to do. But it becomes difficult when we make the
+    # effect generic over its output type `o`:
+    effect !Write[o] {
+        write(s: str): ()
+    }
+    
+    effect !!Log[o] {
+        context(name: str, c: a !e): a !e
+        log(text: str) 
+    }
+
+    # Now we create specific elaborations for !!Log[list[Str]] and !!Log[Str]:
+    # > Question: Do elaborations need identifiers if they're implicit? It's
+    # > probably best to keep the identifiers, for error messages and maybe
+    # > importing specific items from modules if I want to add that later.
+    # > It's also nice for syntactic resemblance to handlers.
+    elaboration log_str: a !!Log[Str] -> a !Write[Str] { ... }
+    elaboration log_list: a !!Log[list[Str]] -> a !Write[List[Str]] { ... }
+
+    # The idea is that !!Log[Str] just gives a single string of output and
+    # !!Log[List[Str]] gives a list with one element per log call.
+    
+    # The question now is: how should we figure out which elaborations to use?
+    # I think we cannot always figure that out, depending on how the !Write
+    # handler is defined. Let's say we have this:
+    handler write_str: a !Write[str] -> (a, str) { ... }
+    handler write_list: a !Write[List[str]] -> (a, List[str]) { ... }
+
+    # Then the handler creates a context in which we can know which elaboration
+    # to use. For example, the code below should clearly use log_str.
+    handle write_str {
+        elab {
+            log("hello")
+        }
+    }
+
+    # However, it's undefined in this case:
+    handle write_str {
+        handle write_list {
+            elab {
+                log("hello")
+            }
+        }
+    }
+
+    # It's also undefined if we do this:
+    # > Note: Technically we might need constraints for this?
+    # > or we do type checking only when monomorphized, zig-style.
+    handler write_generic: a !Write[b] -> (a, b) { ... }
+
+    handle write_generic {
+        elab {
+            log("hello")
+        }
+    }
+
+    # But it _might_ be possible to determine if annotate some stuff:
+    fn foo(): (a, Str) {
+        handle write_generic {
+            elab {
+                log("hello")
+            }
+        }
+    }
+
+    # Using type inference, we could know that we need !Write[Str] and hence
+    # !!Log[Str], but the inference needs to be quite powerful.
+
+    # For another interesting case, let's ignore `log_list` and assume that we
+    # only have `log_str`. Now take this code:
+    fn foo(): a {
+        (a, s) <- handle write_generic {
+            elab {
+                log("hello")
+            }
+        }
+        a
+    }
+
+    # Essentially, we only "know" that have !!Log[o] elaborated into !Write[o]
+    # and then we discard `o`. But we don't have an elaboration for !!Log[o],
+    # only for !!Log[Str]. Since that is the _only_ option, we can infer that
+    # we need to use log_str and that we have !Write[Str].
+
+    # It might be too magical, though it is very powerful and fits the theme of
+    # allowing effects to dictate program behaviour in large part.
+
+    # We might need to limit the handlers and elaborations that could be
+    # defined. For example, a handler for !Write[o] must have a generic `o`
+    # parameter, not a specific one. But this limits the power of effects a bit.
+
+    # However, in a powerful language, your could use generic functions with
+    # specific implementations to get specific behaviour again. For example, if
+    # `update` is defined differently (via a typeclass-like mechanism) for
+    # `List[Str]` and `Str`, you could still write this:
+    handler write_generic: a !Write[o] -> (a, o) {
+        write(text: Str): () {
+            (a, o) <- resume(());
+            o' <- append(o, text);
+            (a, o')
+        }
+    }
+
+    # If you can pass `resume` as function you could even defer the entire
+    # implementation to another function and you lose almost no generality.
+
+    # Still though, we can't map different instances to different monads,
+    # unless somehow access the associated types of the typeclass. 
+
+    # But that level of generality might not be desirable anyway.
+
+    # With elaborations, we have additional aspect that we might want to
+    # elaborate different instances to different algebraic effects. E.g.
+    # elaborate !!Log[str] to !WriteStr and !!Log[List[Str]] to !WriteList.
+    # This _requires_ separately defined elaborations.
+    elaboration foo: a !!Log[b] -> a !WriteStr | b !WriteList
+    
+    # Again, this begs the question whether that is even desirable.
+
+    # However, we can also change the restriction, so that there is only one
+    # elaboration of each higher-order effect in scope at any time, regardless
+    # of type parameters. That kind of solves the issue and we can get away
+    # with this, because it's compile time inference anyway and there's no
+    # runtime branching.
+}

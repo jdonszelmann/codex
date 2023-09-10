@@ -1,0 +1,52 @@
+use std;
+
+effect Write {
+    write(String) ()
+}
+
+effect Read {
+    ask() String
+}
+
+effect Log! {
+    context!(String, a) a
+    log!(String) ()
+}
+
+let hRead = fn(v: String) {
+    handler {
+        return(x) { x }
+        ask() { resume(v) }
+    }
+};
+
+let hWrite = handler {
+    return(x) { "" }
+    write(m) {
+        let rest = resume(());
+        let msg = concat(m, "\n");
+        concat(msg, rest)
+    }
+};
+
+let eLog = elaboration Log! -> <Read,Write> {
+    context!(s, c) {
+        let new_context = concat(concat(ask(), s), ":");
+        handle[hRead(new_context)] c
+    }
+    log!(m) {
+        write(concat(concat(ask(), " "), m))
+    }
+};
+
+let main = handle[hRead("")] handle[hWrite] elab[eLog] {
+    context!("main", {
+        log!("msg1");
+        context!("foo", {
+            log!("msg2")
+        });
+        context!("bar", {
+            log!("msg3")
+        })
+    })
+};

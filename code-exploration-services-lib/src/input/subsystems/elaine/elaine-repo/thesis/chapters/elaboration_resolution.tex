@@ -1,0 +1,59 @@
+\chapter{Implicit Elaboration Resolution}\label{chap:elabres}
+
+With Elaine, we aim to explore the further ergonomic improvements we can make for programming with effects. We noticed in our experimentation that elaborations are often not parametrized and that there is often only one in scope at a time. Hence, the elaboration for a higher-order effect that should be applied is often non-ambiguous and can be inferred.
+
+This led us to add implicit elaboration resolution to Elaine. This feature allows the programmer to omit the elaboration from the \el{elab} keyword. Take the following example, where we let the interpreter infer the elaboration.
+
+\begin{lstlisting}[language=elaine,style=fancy]
+effect Val! {
+    val!() Int
+}
+
+let eVal = elaboration Val! -> <> {
+    val!() { 5 }
+};
+
+let main = elab { val!() };
+\end{lstlisting}
+
+This feature allows for some nice programming patterns. For example, it allows us to bundle a higher-order effect and a standard elaboration in a module. When this module is imported, the effect and elaboration are both brought into scope and \el{elab} will apply the standard elaboration automatically.
+
+The order in which elaborations are applied does not influence the semantics of the program.\citationneeded Therefore, implicit elaboration resolution can also be used to elaborate multiple effects with a single \el{elab} construct. To make the inference predictable, we require that an implicit elaboration must elaborate all higher-order effects.
+
+This is a nice convenience, but it requires some caution. A problem arises when we define multiple elaborations for an effect; which one should then be used? We have chosen to simply give a type error in this case. To fix the type error we simply provide the elaboration we want with \el{elab[eVal1]}.
+
+\begin{lstlisting}[language=elaine,style=fancy]
+effect Val! {
+    val!() Int
+}
+
+let eVal1 = elaboration Val! -> <> {
+    val!() { 1 }
+};
+
+let eVal2 = elaboration Val! -> <> {
+    val!() { 2 }
+};
+
+let main = elab { val!() }; # Type error here!
+\end{lstlisting}
+
+The elaboration resolution consists of two parts: inference and transformation. The inference is done by the type checker and is hence type-directed, which records the inferred elaboration. After type checking the program is then transformed such that all implicit elaborations have been replaced by explicit elaborations.
+
+To infer the elaborations, the type checker first analyzes the subexpression. This will yield some computation type with an effect row containing both higher-order and algebraic effects: $\row{H!_1, \dots, H!_n, A_1, \dots, A_m}$. It then checks the type environment to look for elaborations $E_1, \dots, E_n$ which elaborate $H!_1, \dots, H!_n$, respectively. Only elaborations that are directly in scope are considered, so if an elaboration resides in another module, it needs be imported first. For each higher-order effect, there must be exactly one elaboration.
+
+The \el{elab} is finally transformed into one explicit \el{elab} per higher-order effect. Recall that the order of elaborations does not matter for the semantics of the program, meaning that we safely apply them any order.
+
+\begin{lstlisting}[language=elaine,style=fancy]
+elab[$E_1$] elab[$E_2$] ... elab[$E_n$]
+\end{lstlisting}
+
+A nice property of this feature is that the transformation results in very readable code. Because the elaboration is in scope, there is an identifier for it in scope as well. The transformation then simply inserts this identifier. The \elab in the first example of this chapter will, for instance, be transformed to \el{elab[eVal]}. An IDE could then display this transformed \el{elab} as an inlay hint.
+
+\TODO{If Jonathan's syntax highlighting and linking is integrated we can talk about that here too.}
+
+The same inference could trivially be added for handlers. However, this would yield to unpredictable results, because the semantics of the program depend on the order in which handlers are applied. If we then have an expression with two algebraic effects, how do we determine the order in which they should be applied?
+
+There are some solutions for this. For example, we could require that the subexpression can only use a single algebraic effect, but that would make the feature much less useful. Another possibility is to assign some standard precedence to effects. We think that this would become quite confusing in the end.
+
+Another difficulty with using inference for handlers is that handlers are often parametrized and that there is then not just a handler in scope, but only a function returning a handler. This makes inference impossible in most cases.

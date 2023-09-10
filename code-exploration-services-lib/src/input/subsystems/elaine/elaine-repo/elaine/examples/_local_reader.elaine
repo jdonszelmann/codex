@@ -1,0 +1,30 @@
+use std;
+
+effect Ask {
+    ask() Int
+}
+
+effect Reader! {
+    local!(fn(Int) Int, b) b
+    ask!() Int
+}
+
+let hAsk = fn(v: Int) {
+    handler {
+        return(x) { x }
+        ask() { resume(v) }
+    }
+};
+
+let eLocal = elaboration Reader! -> <Ask> {
+    local!(f, c) {
+        handle[hAsk(f(ask()))] c
+    }
+    ask!() { ask() }
+};
+
+let f = fn(x) { mul(2, x) };
+
+let main = handle[hAsk(2)] elab {
+    local!(f, ask());
+};

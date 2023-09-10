@@ -1,0 +1,108 @@
+# Each file consists of a flat list of modules
+# A main module, containing a main function is required and is the
+# entry point.
+# Also comments start with `#`
+
+mod Foo {
+
+}
+
+mod Bar {
+
+}
+
+mod Main {
+    # Importing all items from other modules
+    # All declarations are independent of order, they are collected before
+    # type checking.
+    # All declarations start with a keyword. This has the advantage that we
+    # don't need to end lines with semicolons.
+    # TODO: Keywords are invalid identifiers
+    import Foo
+    import Bar
+
+    # Defining an algebraic effect
+    effect !Foo {}
+
+    # Defining a higher-order effect
+    # I like this syntax because it reflects the use of the type
+    effect !!Bar {
+        aaaa(b: B): C
+        dddd(e: E): F
+    }
+
+    handler abort: a !Abort -> Maybe[a] {
+        return(x) {
+            Just(x)
+        }
+        abort() : a {
+            Nothing
+        }
+    }
+
+    # # TODO: Defining constant values at the global scope
+    # const a: int = 5
+
+    # TODO
+    # # We can define aliases of types & effect rows
+    # # However, we can't define handlers/elaborations for aliases
+    # # They are syntactic only
+    # alias !IO = !Read !Write !FileSystem
+    # alias !!Foo = !!Bar
+
+    # # Type aliases can have an effect row
+    # alias A = B !Read
+
+    elaboration bob: a !!Hello -> a !Foo {
+        # Types with effects are the type followed by effects (marked with
+        # ! or !! for algebraic and higher-order, respectively).
+        # Operations are used like functions
+        flop(b: B): C !A {
+            handle foo b
+        }
+    }
+
+    # Defining an algebraic data type with a list of constructors
+    # The parentheses are always required
+    type Foo {
+        Bar(A)
+        Baz()
+    }
+
+    # Function definition
+    fn foo(a: A) : B !State !!Except {
+        # Nested expressions are not allowed (at the moment)
+        # Arguments must be vars or literals
+        x <- foo(bar);
+        y <- baz(bob);
+        y <- match hello {
+            One(x) => x
+            Two(b) => b
+        };
+        a <- "\"hello\nworld";
+        x
+    }
+
+    fn higher_order(f: fn(a): b !A, x: a): b !A {
+        f(x)
+    }
+
+    # This might not be necessary to support, but we can still parse it to give a good error
+    fn higher_order2(f: (fn(a): b !A) !B, x: a): b !A !B {
+        f' <- f;
+        f'(x)
+    }
+
+    f(g(x))
+
+    y <- g(x);
+    f(y)
+
+    handle state {
+        res <- handle state {
+            ...
+        }
+        get()
+        set()
+    }
+}

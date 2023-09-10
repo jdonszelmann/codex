@@ -1,0 +1,14 @@
+# TODO: This should obviously fail (or have well-defined semantics)!
+effect Val! {
+    val!() Int
+}
+
+let eVal1 = elaboration Val! -> <> {
+    val!() { 1 }
+};
+
+let eVal2 = elaboration Val! -> <> {
+    val!() { 2 }
+};
+
+let main = elab val!();

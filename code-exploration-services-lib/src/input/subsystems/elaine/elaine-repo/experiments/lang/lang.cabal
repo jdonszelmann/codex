@@ -1,0 +1,48 @@
+cabal-version:      3.0
+
+name:               lang
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            MIT
+license-file:       LICENSE
+author:             Terts Diepraam
+maintainer:         terts.diepraam@gmail.com
+-- copyright:
+category:           Language
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+executable lang
+    import:           warnings
+    main-is:          Main.hs
+    -- other-modules:
+    other-extensions:
+        LambdaCase
+    build-depends:    base ^>=4.16.3.0, containers, lang
+    hs-source-dirs:   app
+
+    -- Base language which the package is written in.
+    default-language: Haskell2010
+
+library
+    exposed-modules:  Effen, Sugar, AST
+    hs-source-dirs:   app
+    build-depends:    base ^>=4.16.3.0, containers
+    default-language: Haskell2010
+
+test-suite test-lang
+  type:               exitcode-stdio-1.0
+  main-is:            Main.hs
+  hs-source-dirs:     test
+  default-language:   Haskell2010
+  build-depends:      base,
+                      test-framework,
+                      test-framework-hunit,
+                      HUnit,
+                      containers,
+                      lang

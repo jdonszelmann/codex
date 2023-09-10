@@ -1,0 +1,77 @@
+cabal-version:      3.4
+name:               elaine
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            MIT
+license-file:       LICENSE
+author:             Terts Diepraam
+maintainer:         terts.diepraam@gmail.com
+-- copyright:
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common extensions
+  default-extensions: FlexibleInstances,
+                      LambdaCase,
+                      DataKinds,
+                      GADTs,
+                      OverloadedStrings,
+                      BlockArguments,
+                      PatternSynonyms,
+                      DeriveGeneric
+
+common warnings
+  ghc-options: -Wall
+
+library
+  import:           warnings, extensions
+  exposed-modules:  Elaine.AST,
+                    Elaine.Ident,
+                    Elaine.TypeVar,
+                    Elaine.Parse,
+                    Elaine.TypeCheck,
+                    Elaine.Pretty,
+                    Elaine.Types,
+                    Elaine.Eval,
+                    Elaine.Exec,
+                    Elaine.Transform,
+                    Elaine.Std
+  hs-source-dirs:   src
+  build-depends:    base >= 4.10 && < 5,
+                    mtl == 2.2.2,
+                    containers == 0.6.5.1,
+                    multiset == 0.3.4.3,
+                    megaparsec == 9.3.0,
+                    text == 2.0.2,
+                    lens == 5.2.2,
+                    pretty-simple == 4.1.2.0,
+                    aeson == 2.1.2.1,
+                    bytestring
+  default-language: Haskell2010
+
+executable elaine
+  import:           warnings
+  main-is:          Main.hs
+  build-depends:    base,
+                    elaine,
+                    pretty-simple
+  hs-source-dirs:   app
+  default-language: Haskell2010
+
+test-suite test-elaine
+  import:             extensions
+  type:               exitcode-stdio-1.0
+  main-is:            Main.hs
+  other-modules:      TypeCheck,
+                      Examples
+  hs-source-dirs:     test
+  default-language:   Haskell2010
+  build-depends:      base,
+                      elaine,
+                      directory == 1.3.8.1,
+                      hspec == 2.10.10,
+                      raw-strings-qq == 1.1,
+                      containers,
+                      text

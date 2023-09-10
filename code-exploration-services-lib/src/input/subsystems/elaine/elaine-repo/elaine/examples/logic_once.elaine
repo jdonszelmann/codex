@@ -1,0 +1,58 @@
+use std;
+
+effect Yield {
+   yield(String) ()
+}
+
+effect Logic {
+    branch() Bool
+    fail() a
+}
+
+let hYield = handler {
+    return(x) { "" }
+    yield(m) { concat(concat(m, "\n"), resume(())) }
+};
+
+let hLogic = handler {
+    return(x) { () }
+    branch() {
+        resume(true);
+        resume(false)
+    }
+    fail() { () }
+};
+
+let show_bools = fn(a, b, c) {
+    let a = concat(show_bool(a), ", ");
+    let b = concat(show_bool(b), ", ");
+    concat(concat(a, b), show_bool(c))
+};
+
+let f = fn(a, b, c) { and(not(a), b) };
+
+let assert = fn(f, a, b, c) <Logic,Yield> () {
+    if f(a, b, c) {
+        yield(show_bools(a, b, c))
+    } else {
+        fail()
+    }
+};
+
+effect Once! {
+    once!(()) String
+}
+
+let eOnce = elaboration Once! -> <Yield> {
+    once!(c) {
+        let hYieldOnce = handler {
+            return(x) { "" }
+            yield(m) { concat(m, "\n") }
+        };
+        handle[hYieldOnce] c
+    }
+};
+
+let main = handle[hYield] handle[hLogic] elab[eOnce] {
+    yield(once!(assert(f, branch(), branch(), branch())))
+};

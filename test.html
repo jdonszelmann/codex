@@ -1,0 +1,3385 @@
+<!DOCTYPE html>
+<html><head><title>Codex</title></head><body><div class="change-theme theme-one-dark" id="main"><style>
+body, html {
+    padding: 0;
+    margin: 0;
+
+    width: 100%;
+    height: 100%;
+}
+
+pre {
+    margin: 0;
+    padding: 1em;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+}
+
+#main {
+    display: grid;
+    gap: 1em;
+    grid-template-columns: 1fr 4fr;
+    grid-template-rows: 2em auto;
+    grid-template-areas:
+        "theme   code"
+        "outline code";
+    width: 100%;
+    height: 100%;
+}
+
+.line-numbers {
+    grid-area: nums;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid gray;
+    margin-right: 0.5em;
+}
+
+.theme {
+    grid-area: theme;
+}
+.theme select {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    cursor: pointer;
+    background: inherit;
+    color: inherit;
+}
+
+.outline .outline-item {
+    margin-left: 1em;
+}
+
+.outline .outline-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 2em;
+}
+
+.outline .outline-header:hover {
+    box-shadow: inset 0 0 500px 500px rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.outline .outline-item .code-line {
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.outline {
+    grid-area: outline;
+}
+
+.code {
+    grid-area: code;
+    overflow-y: scroll;
+    max-height: 100vh;
+    display: grid;
+    grid-template-columns: 3em auto;
+}
+
+.line-numbers {
+    display: flex;
+    flex-direction: column;
+    font-family: monospace;
+}
+
+.line-numbers span {
+    height: 1.8em;
+    display: flex;
+    padding-right: 0.2em;
+    flex-direction: row;
+    align-items: center;
+    justify-content: right;
+}
+
+.code-view {
+    font-family: monospace;
+}
+
+.code-line {
+    margin: 0;
+    padding: 0;
+    height: 1.8em;
+    width: 100%;
+    white-space: pre;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.code-line:hover {
+    box-shadow: inset 0 0 500px 500px rgba(255, 255, 255, 0.1);
+}
+
+.code-line>div {
+    display: inline-block;
+}
+
+.token {
+    position: relative;
+}
+
+.clickable {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.reference-popup {
+    display: none;
+    position: absolute;
+    border: 2px solid;
+    border-radius: 2px;
+    padding: 0.5em;
+
+    top: 1.5em;
+    z-index: 20;
+    flex-direction: column;
+}
+
+.reference-popup .reference-item {
+    width: 100%;
+    height: 2em;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 2em;
+}
+
+.highlighted {
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% {
+        /*transform: scale(0.95);*/
+        box-shadow: 0 0 0 0 rgba(240, 240, 0, 0.7);
+        border-radius: 1em;
+    }
+
+    70% {
+        /*transform: scale(1);*/
+        box-shadow: 0 0 0 15px rgba(240, 240, 0, 0);
+        border-radius: 1em;
+    }
+
+    100% {
+        /*transform: scale(0.95);*/
+        box-shadow: 0 0 0 0 rgba(240, 240, 0, 0);
+        border-radius: 1em;
+    }
+}
+
+.diagnostic {
+    text-decoration: underline !important;
+    text-decoration-style: wavy !important;
+    text-decoration-color: yellow !important;
+}
+</style><style>
+.theme-one-dark {
+    color: #bfcae0ff;
+}
+    
+.theme-one-dark .foreground {
+    color: #bfcae0ff !important;
+}
+    
+.theme-one-dark .highlighted {
+    background: #3d4350ff !important;
+}
+    
+.theme-one-dark {
+    background: #282c34ff;
+}
+    
+.theme-one-dark .background {
+    background: #282c34ff;
+}
+    
+.theme-one-dark .border {
+    border-color: #528bffff;
+}
+    
+.theme-one-dark .comment {
+    color: #5c6370ff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-one-dark .keyword-operator-class {
+    color: #b8cae8ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .constant-other {
+    color: #b8cae8ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .source-php-embedded-line {
+    color: #b8cae8ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .variable {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .support-other-variable {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .string-other-link {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .string-regexp {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-name-tag {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-other-attribute-name {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .meta-tag {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .declaration-tag {
+    color: #fa6e7cff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .constant-numeric {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .constant-language {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .support-constant {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .constant-character {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .variable-parameter {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .punctuation-section-embedded {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .keyword-other-unit {
+    color: #eeb164ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-name-class {
+    color: #eee280ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-name-type-class {
+    color: #eee280ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .support-type {
+    color: #eee280ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .support-class {
+    color: #eee280ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .string {
+    color: #adee7aff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-other-inherited-class {
+    color: #adee7aff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .markup-heading {
+    color: #adee7aff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .constant-other-color {
+    color: #b8cae8ff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-name-function {
+    color: #61cbeeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .meta-function-call {
+    color: #61cbeeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .support-function {
+    color: #61cbeeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .keyword-other-special-method {
+    color: #61cbeeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .meta-block-level {
+    color: #61cbeeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .keyword {
+    color: #ec7beeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .storage {
+    color: #ec7beeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .storage-type {
+    color: #ec7beeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .entity-name-tag-css {
+    color: #ec7beeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .keyword-operator {
+    color: #ec7beeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .invalid {
+    color: #eeeeeeff;
+    background: #ee7c80ff;
+    
+    
+    
+}
+                
+.theme-one-dark .meta-separator {
+    color: #b8cae8ff;
+    background: #6b4f4fff;
+    
+    
+    
+}
+                
+.theme-one-dark .invalid-deprecated {
+    color: #243043ff;
+    background: #ee864dff;
+    
+    
+    
+}
+                
+.theme-one-dark .constant-character {
+    color: #4fe1eeff;
+    
+    
+    
+    
+}
+                
+.theme-one-dark .constant-other {
+    color: #4fe1eeff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt {
+    color: #ffffffff;
+}
+    
+.theme-cobalt .foreground {
+    color: #ffffffff !important;
+}
+    
+.theme-cobalt .highlighted {
+    background: #b36539bf !important;
+}
+    
+.theme-cobalt {
+    background: #002240ff;
+}
+    
+.theme-cobalt .background {
+    background: #002240ff;
+}
+    
+.theme-cobalt .border {
+    border-color: #ffffffff;
+}
+    
+.theme-cobalt .punctuation.-.(punctuation-definition-string.||.punctuation-definition-comment) {
+    color: #e1efffff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .constant {
+    color: #ff628cff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .entity {
+    color: #ffdd00ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .keyword {
+    color: #ff9d00ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .storage {
+    color: #ffee80ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .string.-string-unquoted-old-plist.-string-unquoted-heredoc {
+    color: #3ad900ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .string-unquoted-heredoc string {
+    color: #3ad900ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .comment {
+    color: #0088ffff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-cobalt .support {
+    color: #80ffbbff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .variable {
+    color: #ccccccff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .variable-language {
+    color: #ff80e1ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-function-call {
+    color: #ffee80ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .invalid {
+    color: #f8f8f8ff;
+    background: #800f00ff;
+    
+    
+    
+}
+                
+.theme-cobalt .text.source {
+    color: #ffffffff;
+    background: #223545ff;
+    
+    
+    
+}
+                
+.theme-cobalt .string-unquoted-heredoc {
+    color: #ffffffff;
+    background: #223545ff;
+    
+    
+    
+}
+                
+.theme-cobalt .source source {
+    color: #ffffffff;
+    background: #223545ff;
+    
+    
+    
+}
+                
+.theme-cobalt .entity-other-inherited-class {
+    color: #80fcffff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-cobalt .string-quoted.source {
+    color: #9eff80ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .string.constant {
+    color: #80ff82ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .string-regexp {
+    color: #80ffc2ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .string.variable {
+    color: #edef7dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .support-function {
+    color: #ffb054ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .support-constant {
+    color: #eb939aff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .support-type-exception {
+    color: #ff1e00ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-preprocessor-c {
+    color: #8996a8ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-preprocessor-c.keyword {
+    color: #afc4dbff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-sgml-html.meta-doctype {
+    color: #73817dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-sgml-html meta-doctype entity {
+    color: #73817dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-sgml-html meta-doctype string {
+    color: #73817dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-xml-processing {
+    color: #73817dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-xml-processing entity {
+    color: #73817dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-xml-processing string {
+    color: #73817dff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-tag {
+    color: #9effffff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-tag entity {
+    color: #9effffff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-selector-css.entity-name-tag {
+    color: #9effffff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-selector-css.entity-other-attribute-name-id {
+    color: #ffb454ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-selector-css.entity-other-attribute-name-class {
+    color: #5fe461ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .support-type-property-name-css {
+    color: #9df39fff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-property-group.support-constant-property-value-css {
+    color: #f6f080ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-property-value support-constant-property-value-css {
+    color: #f6f080ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-preprocessor-at-rule.keyword-control-at-rule {
+    color: #f6aa11ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-property-value.support-constant-named-color-css {
+    color: #edf080ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-property-value constant {
+    color: #edf080ff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-constructor-argument-css {
+    color: #eb939aff;
+    
+    
+    
+    
+}
+                
+.theme-cobalt .meta-diff {
+    color: #f8f8f8ff;
+    background: #000e1aff;
+    
+    
+    
+}
+                
+.theme-cobalt .meta-diff-header {
+    color: #f8f8f8ff;
+    background: #000e1aff;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-deleted {
+    color: #f8f8f8ff;
+    background: #4c0900ff;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-changed {
+    color: #f8f8f8ff;
+    background: #806f00ff;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-inserted {
+    color: #f8f8f8ff;
+    background: #154f00ff;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-raw {
+    color: #ffffffff;
+    background: #8fddf630;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-quote {
+    color: #ffffffff;
+    background: #004480ff;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-list {
+    color: #ffffffff;
+    background: #130d26ff;
+    
+    
+    
+}
+                
+.theme-cobalt .markup-bold {
+    color: #c1afffff;
+    
+    
+    
+    font-weight: bold;
+}
+                
+.theme-cobalt .markup-italic {
+    color: #b8ffd9ff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-cobalt .markup-heading {
+    color: #c8e4fdff;
+    background: #001221ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-3024-day {
+    color: #4a4543ff;
+}
+    
+.theme-3024-day .foreground {
+    color: #4a4543ff !important;
+}
+    
+.theme-3024-day .highlighted {
+    background: #d6d5d4ff !important;
+}
+    
+.theme-3024-day {
+    background: #f7f7f7ff;
+}
+    
+.theme-3024-day .background {
+    background: #f7f7f7ff;
+}
+    
+.theme-3024-day .border {
+    border-color: #4a4543ff;
+}
+    
+.theme-3024-day .variable-parameter-function {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .comment {
+    color: #807d7cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-comment {
+    color: #807d7cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-string {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-variable {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-string {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-parameters {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-string {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-array {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .none {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .keyword-operator {
+    color: #4a4543ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .keyword {
+    color: #a16a94ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .keyword-control {
+    color: #a16a94ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .variable {
+    color: #db2d20ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-name-function {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .meta-require {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .support-function-any-method {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .meta-class {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .support-class {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-name-class {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-name-type-class {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .keyword-other-special-method {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .storage {
+    color: #a16a94ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .support-function {
+    color: #b5e4f4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .string {
+    color: #01a252ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .constant-other-symbol {
+    color: #01a252ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-other-inherited-class {
+    color: #01a252ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .constant-numeric {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .none {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .none {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .constant {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-name-tag {
+    color: #db2d20ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-other-attribute-name {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-other-attribute-name-id {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-definition-entity {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .meta-selector {
+    color: #a16a94ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .none {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .markup-heading.punctuation-definition-heading {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .entity-name-section {
+    color: #01a0e4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .keyword-other-unit {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .markup-bold {
+    color: #ed0c8cff;
+    
+    
+    
+    font-weight: bold;
+}
+                
+.theme-3024-day .punctuation-definition-bold {
+    color: #ed0c8cff;
+    
+    
+    
+    font-weight: bold;
+}
+                
+.theme-3024-day .markup-italic {
+    color: #a16a94ff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-3024-day .punctuation-definition-italic {
+    color: #a16a94ff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-3024-day .markup-raw-inline {
+    color: #01a252ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .string-other-link {
+    color: #db2d20ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .meta-link {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .markup-list {
+    color: #db2d20ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .markup-quote {
+    color: #ed0c8cff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .meta-separator {
+    color: #4a4543ff;
+    background: #d6d5d4ff;
+    
+    
+    
+}
+                
+.theme-3024-day .markup-inserted {
+    color: #01a252ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .markup-deleted {
+    color: #db2d20ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .markup-changed {
+    color: #a16a94ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .constant-other-color {
+    color: #b5e4f4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .string-regexp {
+    color: #b5e4f4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .constant-character-escape {
+    color: #b5e4f4ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .punctuation-section-embedded {
+    color: #cdab53ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .variable-interpolation {
+    color: #cdab53ff;
+    
+    
+    
+    
+}
+                
+.theme-3024-day .invalid-illegal {
+    color: #f7f7f7ff;
+    background: #db2d20ff;
+    
+    
+    
+}
+                
+.theme-solarized {
+    color: #93a1a1ff;
+}
+    
+.theme-solarized .foreground {
+    color: #93a1a1ff !important;
+}
+    
+.theme-solarized .highlighted {
+    background: #073642ff !important;
+}
+    
+.theme-solarized {
+    background: #002b36ff;
+}
+    
+.theme-solarized .background {
+    background: #002b36ff;
+}
+    
+.theme-solarized .border {
+    border-color: #d30102ff;
+}
+    
+.theme-solarized .comment {
+    color: #657b83ff;
+    
+    
+    font-style: italic;
+    
+}
+                
+.theme-solarized .string {
+    color: #2aa198ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .string-regexp {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .constant-numeric {
+    color: #d33682ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .variable-language {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .variable-other {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .keyword {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .storage {
+    color: #93a1a1ff;
+    
+    
+    
+    font-weight: bold;
+}
+                
+.theme-solarized .entity-name-class {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .entity-name-type {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .entity-name-function {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .punctuation-definition-variable {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .punctuation-section-embedded-begin {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .punctuation-section-embedded-end {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .constant-language {
+    color: #b58900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .meta-preprocessor {
+    color: #b58900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-function-construct {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .keyword-other-new {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .constant-character {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .constant-other {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .entity-other-inherited-class {
+    color: #6c71c4ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .variable-parameter {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .entity-name-tag {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .punctuation-definition-tag {
+    color: #657b83ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .entity-other-attribute-name {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-function {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .punctuation-separator-continuation {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-constant {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-type {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-class {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-type-exception {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .support-other-variable {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .invalid {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-quote {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-list {
+    color: #b58900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-bold {
+    color: #d33682ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-italic {
+    color: #d33682ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-inline-raw {
+    color: #2aa198ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-heading {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized .markup-heading-setext {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light {
+    color: #586e75ff;
+}
+    
+.theme-solarized-light .foreground {
+    color: #586e75ff !important;
+}
+    
+.theme-solarized-light .highlighted {
+    background: #073642ff !important;
+}
+    
+.theme-solarized-light {
+    background: #fdf6e3ff;
+}
+    
+.theme-solarized-light .background {
+    background: #fdf6e3ff;
+}
+    
+.theme-solarized-light .border {
+    border-color: #000000ff;
+}
+    
+.theme-solarized-light .comment {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .string {
+    color: #2aa198ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .string-regexp {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .constant-numeric {
+    color: #d33682ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .variable-language {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .variable-other {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .keyword {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .storage {
+    color: #073642ff;
+    
+    
+    
+    font-weight: bold;
+}
+                
+.theme-solarized-light .entity-name-class {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .entity-name-type {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .entity-name-function {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .punctuation-definition-variable {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .punctuation-section-embedded-begin {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .punctuation-section-embedded-end {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .constant-language {
+    color: #b58900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .meta-preprocessor {
+    color: #b58900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-function-construct {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .keyword-other-new {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .constant-character {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .constant-other {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .entity-other-inherited-class {
+    color: #586e75ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .variable-parameter {
+    color: #586e75ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .entity-name-tag {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .punctuation-definition-tag-begin {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .punctuation-definition-tag-end {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .entity-other-attribute-name {
+    color: #93a1a1ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-function {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .punctuation-separator-continuation {
+    color: #d30102ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-constant {
+    color: #586e75ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-type {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-class {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-type-exception {
+    color: #cb4b16ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .support-other-variable {
+    color: #586e75ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .invalid {
+    color: #586e75ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-quote {
+    color: #859900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-list {
+    color: #b58900ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-bold {
+    color: #d33682ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-italic {
+    color: #d33682ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-inline-raw {
+    color: #2aa198ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-heading {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-solarized-light .markup-heading-setext {
+    color: #268bd2ff;
+    
+    
+    
+    
+}
+                
+.theme-fluidvision {
+    color: #000000ff;
+}
+    
+.theme-fluidvision .foreground {
+    color: #000000ff !important;
+}
+    
+.theme-fluidvision .highlighted {
+    background: #ffd793ff !important;
+}
+    
+.theme-fluidvision {
+    background: #f4f4f4ff;
+}
+    
+.theme-fluidvision .background {
+    background: #f4f4f4ff;
+}
+    
+.theme-fluidvision .border {
+    border-color: #000000ff;
+}
+    
+.theme-fluidvision .comment {
+    color: #386f90ff;
+    background: #ddeefef2;
+    
+    
+    
+}
+                
+.theme-fluidvision .variable {
+    color: #20498dff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .keyword {
+    color: #5b91e1ff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .constant-numeric {
+    color: #c34f0aff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .constant {
+    color: #c5060bff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .constant-language {
+    color: #585cf6ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .string {
+    color: #840e0bff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .constant-character-escaped {
+    color: #26b31aff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .constant-character-escape {
+    color: #26b31aff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .string source {
+    color: #26b31aff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .other-preprocessor {
+    color: #1a921cff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .entity-name-preprocessor {
+    color: #0c450dff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .entity-name-function {
+    color: #1b4b9dff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .keyword-other-name-of-parameter-objc {
+    color: #1b4b9dff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .entity-name-class {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .entity-other-inherited-class {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .variable-parameter {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .storage-type-method {
+    color: #70727eff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .meta-section.entity-name-section {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .declaration-section entity-name-section {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .support-function {
+    color: #3c4c72ff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .support-class {
+    color: #2d5579ff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .support-type {
+    color: #2d5579ff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .support-constant {
+    color: #619a1cff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .support-other-variable {
+    color: #21439cff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .keyword-operator-js {
+    color: #687687ff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .invalid {
+    color: #ffffffff;
+    background: #990000ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .invalid-trailing-whitespace {
+    color: #000000ff;
+    background: #ffd0d0ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .text.source {
+    color: #000000ff;
+    background: #427ff530;
+    
+    
+    
+}
+                
+.theme-fluidvision .string-unquoted {
+    color: #000000ff;
+    background: #427ff530;
+    
+    
+    
+}
+                
+.theme-fluidvision .meta-xml-processing {
+    color: #68685bff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .declaration-xml-processing {
+    color: #68685bff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .meta-doctype {
+    color: #888888ff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .declaration-doctype {
+    color: #888888ff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .meta-doctype-DTD {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .declaration-doctype-DTD {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .meta-tag {
+    color: #1c3981ff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .declaration-tag {
+    color: #1c3981ff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-fluidvision .entity-name-tag {
+    color: #001d56ff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .entity-other-attribute-name {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .markup-heading {
+    color: #0c07ffff;
+    background: #f4f4f4ff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-fluidvision .markup-quote {
+    color: #000000ff;
+    background: #f4f4f4ff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-fluidvision .markup-list {
+    color: #b90690ff;
+    background: #f4f4f4ff;
+    
+    
+    
+}
+                
+.theme-github-light {
+    color: #24292eff;
+}
+    
+.theme-github-light .foreground {
+    color: #24292eff !important;
+}
+    
+.theme-github-light .highlighted {
+    background: #c8c8faff !important;
+}
+    
+.theme-github-light {
+    background: #ffffffff;
+}
+    
+.theme-github-light .background {
+    background: #ffffffff;
+}
+    
+.theme-github-light .border {
+    border-color: #24292eff;
+}
+    
+.theme-github-light .comment {
+    color: #6a737dff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .punctuation-definition-comment {
+    color: #6a737dff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-comment {
+    color: #6a737dff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .constant {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .entity-name-constant {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .variable-other-constant {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .variable-language {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .keyword-operator-symbole {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .keyword-other-mark {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .entity {
+    color: #6f42c1ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .entity-name {
+    color: #6f42c1ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .variable-parameter-function {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .entity-name-tag {
+    color: #22863aff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .keyword {
+    color: #d73a49ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .storage {
+    color: #d73a49ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .storage-type {
+    color: #d73a49ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .storage-modifier-package {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .storage-modifier-import {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .storage-type-java {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .punctuation-definition-string {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string punctuation-section-embedded source {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-unquoted-import-ada {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .support {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .meta-property-name {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .variable {
+    color: #e36209ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .variable-other {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .invalid-broken {
+    color: #b31d28ff;
+    background: #ffffffff;
+    text-decoration: underline;
+    font-style: italic;
+    font-weight: bold;
+}
+                
+.theme-github-light .invalid-deprecated {
+    color: #b31d28ff;
+    background: #ffffffff;
+    text-decoration: underline;
+    font-style: italic;
+    font-weight: bold;
+}
+                
+.theme-github-light .invalid-illegal {
+    color: #fafbfcff;
+    background: #b31d28ff;
+    text-decoration: underline;
+    font-style: italic;
+    
+}
+                
+.theme-github-light .carriage-return {
+    color: #fafbfcff;
+    background: #d73a49ff;
+    text-decoration: underline;
+    font-style: italic;
+    
+}
+                
+.theme-github-light .invalid-unimplemented {
+    color: #b31d28ff;
+    background: #ffffffff;
+    text-decoration: underline;
+    font-style: italic;
+    font-weight: bold;
+}
+                
+.theme-github-light .message-error {
+    color: #b31d28ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string.source {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string.variable {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .source-regexp {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-regexp {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-regexp-character-class {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-regexp constant-character-escape {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-regexp source-ruby-embedded {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-regexp string-regexp-arbitrary-repitition {
+    color: #032f62ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .string-regexp.constant-character-escape {
+    color: #22863aff;
+    background: #ffffffff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-github-light .support-constant {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .support-variable {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .meta-module-reference {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-list {
+    color: #735c0fff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-heading {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-github-light .markup-heading entity-name {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-github-light .markup-quote {
+    color: #22863aff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-italic {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    font-style: italic;
+    
+}
+                
+.theme-github-light .markup-bold {
+    color: #24292eff;
+    background: #ffffffff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-github-light .markup-raw {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-deleted {
+    color: #b31d28ff;
+    background: #ffeef0ff;
+    
+    
+    
+}
+                
+.theme-github-light .meta-diff-header-from-file {
+    color: #b31d28ff;
+    background: #ffeef0ff;
+    
+    
+    
+}
+                
+.theme-github-light .punctuation-definition-deleted {
+    color: #b31d28ff;
+    background: #ffeef0ff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-inserted {
+    color: #22863aff;
+    background: #f0fff4ff;
+    
+    
+    
+}
+                
+.theme-github-light .meta-diff-header-to-file {
+    color: #22863aff;
+    background: #f0fff4ff;
+    
+    
+    
+}
+                
+.theme-github-light .punctuation-definition-inserted {
+    color: #22863aff;
+    background: #f0fff4ff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-changed {
+    color: #e36209ff;
+    background: #ffebdaff;
+    
+    
+    
+}
+                
+.theme-github-light .punctuation-definition-changed {
+    color: #e36209ff;
+    background: #ffebdaff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-ignored {
+    color: #f6f8faff;
+    background: #005cc5ff;
+    
+    
+    
+}
+                
+.theme-github-light .markup-untracked {
+    color: #f6f8faff;
+    background: #005cc5ff;
+    
+    
+    
+}
+                
+.theme-github-light .meta-diff-range {
+    color: #6f42c1ff;
+    background: #ffffffff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-github-light .meta-diff-header {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .meta-separator {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    font-weight: bold;
+}
+                
+.theme-github-light .meta-output {
+    color: #005cc5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-tag {
+    color: #586069ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-curly {
+    color: #586069ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-round {
+    color: #586069ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-square {
+    color: #586069ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-angle {
+    color: #586069ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-quote {
+    color: #586069ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .brackethighlighter-unmatched {
+    color: #b31d28ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .sublimelinter-mark-error {
+    color: #b31d28ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .sublimelinter-mark-warning {
+    color: #e36209ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .sublimelinter-gutter-mark {
+    color: #959da5ff;
+    background: #ffffffff;
+    
+    
+    
+}
+                
+.theme-github-light .constant-other-reference-link {
+    color: #032f62ff;
+    background: #ffffffff;
+    text-decoration: underline;
+    
+    
+}
+                
+.theme-github-light .string-other-link {
+    color: #032f62ff;
+    background: #ffffffff;
+    text-decoration: underline;
+    
+    
+}
+                </style><div class="theme"><select id="change-theme"><option value="theme-one-dark">One Dark</option><option value="theme-cobalt">Cobalt</option><option value="theme-3024-day">3024 day</option><option value="theme-solarized">Solarized</option><option value="theme-solarized-light">Solarized light</option><option value="theme-fluidvision">Fluidvision</option><option value="theme-github-light">GitHub Light</option></select></div><div class="outline"><pre><div class="outline-root"><div class="outline-item"><div class="outline-header" data-goto-class="goto-50-6"><span>function: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-47-75 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>test_2</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-127-6"><span>function: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-124-28 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>test_1</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-189-7"><span>struct: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-type entity-name-type-struct entity-name-type-struct-rust goto-154-141 outline token" data-line="1"><span>Option</span></div><div class="entity entity-name entity-name-type entity-name-type-struct entity-name-type-struct-rust goto-154-141 outline token" data-line="1"><span>s</span></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-203-7"><span>field: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="goto-154-141 goto-203-24 outline token variable variable-other variable-other-rust" data-line="1"><span>options</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-233-7"><span>field: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="goto-154-141 goto-233-12 outline token variable variable-other variable-other-rust" data-line="1"><span>lastpos</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-251-8"><span>field: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="goto-154-141 goto-251-21 outline token variable variable-other variable-other-rust" data-line="1"><span>messages</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-278-6"><span>field: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="goto-154-141 goto-278-14 outline token variable variable-other variable-other-rust" data-line="1"><span>source</span></div></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-302-7"><span>implementation: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-297-1053 outline token" data-line="1"><span>Option</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-297-1053 outline token" data-line="1"><span>s</span></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-323-3"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>new</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-507-7"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>message</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-642-3"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>pos</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-781-5"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>merge</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-934-3"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>add</span></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-1050-7"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>add_str</span></div></div></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-1374-7"><span>implementation: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-1352-750 outline token" data-line="1"><span>Option</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-1352-750 outline token" data-line="1"><span>s</span></div></div></div></div><div class="outline-item"><div class="outline-header" data-goto-class="goto-1391-3"><span>method: </span><div class="code-view"><div class="code-line"><div class="outline token" data-line="1"><span></span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust outline token" data-line="1"><span>fmt</span></div></div></div></div></div></div></div></pre></div><div class="code"><div class="nums"><div class="line-numbers"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>32</span><span>33</span><span>34</span><span>35</span><span>36</span><span>37</span><span>38</span><span>39</span><span>40</span><span>41</span><span>42</span><span>43</span><span>44</span><span>45</span><span>46</span><span>47</span><span>48</span><span>49</span><span>50</span><span>51</span><span>52</span><span>53</span><span>54</span><span>55</span><span>56</span><span>57</span><span>58</span><span>59</span><span>60</span><span>61</span><span>62</span><span>63</span><span>64</span><span>65</span><span>66</span><span>67</span><span>68</span><span>69</span><span>70</span><span>71</span><span>72</span><span>73</span><span>74</span><span>75</span><span>76</span><span>77</span><span>78</span><span>79</span><span>80</span><span>81</span><span>82</span><span>83</span><span>84</span><span>85</span><span>86</span><span>87</span><span>88</span><span>89</span><span>90</span><span>91</span><span>92</span><span>93</span><span>94</span><span>95</span></div></div><div class="source"><div class="code-view"><div class="code-line"><div class="token" data-line="1"><span></span></div><div class="keyword keyword-other keyword-other-rust meta meta-use meta-use-rust token" data-line="1"><span>use</span></div><div class="meta meta-use meta-use-rust token" data-line="1"><span> </span></div><div class="entity entity-name entity-name-namespace entity-name-namespace-rust meta meta-use meta-use-rust token" data-line="1"><span>core</span></div><div class="keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust meta meta-use meta-use-rust token" data-line="1"><span>::</span></div><div class="meta meta-use meta-use-rust token" data-line="1"><span>fmt;</span></div></div><div class="code-line"><div class="token" data-line="2"><span></span></div><div class="keyword keyword-other keyword-other-rust meta meta-use meta-use-rust token" data-line="2"><span>use</span></div><div class="meta meta-use meta-use-rust token" data-line="2"><span> </span></div><div class="entity entity-name entity-name-namespace entity-name-namespace-rust meta meta-use meta-use-rust token" data-line="2"><span>std</span></div><div class="keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust meta meta-use meta-use-rust token" data-line="2"><span>::</span></div><div class="entity entity-name entity-name-namespace entity-name-namespace-rust meta meta-use meta-use-rust token" data-line="2"><span>collections</span></div><div class="keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust meta meta-use meta-use-rust token" data-line="2"><span>::</span></div><div class="entity entity-name entity-name-type entity-name-type-rust meta meta-use meta-use-rust token" data-line="2"><span>HashSet</span></div><div class="meta meta-use meta-use-rust token" data-line="2"><span>;</span></div></div><div class="code-line"><div class="token" data-line="3"><span></span></div></div><div class="code-line"><div class="token" data-line="4"><span></span></div><div class="goto-47-75 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="4"><span>fn</span></div><div class="goto-47-75 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="4"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-47-75 goto-50-6 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="4"><span>test_2</span></div><div class="goto-47-75 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="4"><span>()</span></div><div class="goto-47-75 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="4"><span> {</span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="5"><span>    </span></div><div class="goto-47-75 keyword keyword-other keyword-other-rust keyword-other-rust-storage keyword-other-rust-storage-type keyword-other-rust-storage-type-rust token" data-line="5"><span>let</span></div><div class="goto-47-75 token" data-line="5"><span> </span></div><div class="diagnostic goto-47-75 goto-69-1 token variable variable-other variable-other-rust" title="consider making this binding mutable: &#96;mut x&#96;" data-line="5"><span>x</span></div><div class="goto-47-75 punctuation punctuation-semi punctuation-semi-rust token" data-line="5"><span>;</span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="6"><span></span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="7"><span>    </span></div><div class="clickable diagnostic goto-47-75 token variable variable-other variable-other-rust" title="warning: value assigned to &#96;x&#96; is never read
+ --> src/test.rs:7:5
+  |
+7 |     x = 4;
+  |     ^
+  |
+  = help: maybe it is overwritten before being read?
+  = note: &#96;#[warn(unused_assignments)]&#96; on by default
+
+
+first assignment to &#96;x&#96;" data-line="7"><div class="goto-reference-instantly" data-goto-class="goto-69-1"></div><span>x</span></div><div class="diagnostic goto-47-75 token" title="first assignment to &#96;x&#96;" data-line="7"><span> </span></div><div class="diagnostic goto-47-75 keyword keyword-operator keyword-operator-assignment keyword-operator-assignment-equal keyword-operator-assignment-equal-rust token" title="first assignment to &#96;x&#96;" data-line="7"><span>=</span></div><div class="diagnostic goto-47-75 token" title="first assignment to &#96;x&#96;" data-line="7"><span> </span></div><div class="constant constant-numeric constant-numeric-decimal constant-numeric-decimal-rust diagnostic goto-47-75 token" title="first assignment to &#96;x&#96;" data-line="7"><span>4</span></div><div class="goto-47-75 punctuation punctuation-semi punctuation-semi-rust token" data-line="7"><span>;</span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="8"><span>    </span></div><div class="clickable diagnostic goto-47-75 token variable variable-other variable-other-rust" title="error[E0384]: cannot assign twice to immutable variable &#96;x&#96;
+ --> src/test.rs:8:5
+  |
+5 |     let x;
+  |         - help: consider making this binding mutable: &#96;mut x&#96;
+6 |
+7 |     x = 4;
+  |     ----- first assignment to &#96;x&#96;
+8 |     x = 5;
+  |     ^^^^^ cannot assign twice to immutable variable
+
+" data-line="8"><div class="goto-reference-instantly" data-goto-class="goto-69-1"></div><span>x</span></div><div class="diagnostic goto-47-75 token" title="error[E0384]: cannot assign twice to immutable variable &#96;x&#96;
+ --> src/test.rs:8:5
+  |
+5 |     let x;
+  |         - help: consider making this binding mutable: &#96;mut x&#96;
+6 |
+7 |     x = 4;
+  |     ----- first assignment to &#96;x&#96;
+8 |     x = 5;
+  |     ^^^^^ cannot assign twice to immutable variable
+
+" data-line="8"><span> </span></div><div class="diagnostic goto-47-75 keyword keyword-operator keyword-operator-assignment keyword-operator-assignment-equal keyword-operator-assignment-equal-rust token" title="error[E0384]: cannot assign twice to immutable variable &#96;x&#96;
+ --> src/test.rs:8:5
+  |
+5 |     let x;
+  |         - help: consider making this binding mutable: &#96;mut x&#96;
+6 |
+7 |     x = 4;
+  |     ----- first assignment to &#96;x&#96;
+8 |     x = 5;
+  |     ^^^^^ cannot assign twice to immutable variable
+
+" data-line="8"><span>=</span></div><div class="diagnostic goto-47-75 token" title="error[E0384]: cannot assign twice to immutable variable &#96;x&#96;
+ --> src/test.rs:8:5
+  |
+5 |     let x;
+  |         - help: consider making this binding mutable: &#96;mut x&#96;
+6 |
+7 |     x = 4;
+  |     ----- first assignment to &#96;x&#96;
+8 |     x = 5;
+  |     ^^^^^ cannot assign twice to immutable variable
+
+" data-line="8"><span> </span></div><div class="constant constant-numeric constant-numeric-decimal constant-numeric-decimal-rust diagnostic goto-47-75 token" title="error[E0384]: cannot assign twice to immutable variable &#96;x&#96;
+ --> src/test.rs:8:5
+  |
+5 |     let x;
+  |         - help: consider making this binding mutable: &#96;mut x&#96;
+6 |
+7 |     x = 4;
+  |     ----- first assignment to &#96;x&#96;
+8 |     x = 5;
+  |     ^^^^^ cannot assign twice to immutable variable
+
+" data-line="8"><span>5</span></div><div class="goto-47-75 punctuation punctuation-semi punctuation-semi-rust token" data-line="8"><span>;</span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="9"><span></span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="10"><span></span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="11"><span>    </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-47-75 meta meta-macro meta-macro-rust token" data-line="11"><span>println!</span></div><div class="goto-47-75 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="11"><span>(</span></div><div class="goto-47-75 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="11"><span>&quot;</span></div><div class="goto-47-75 meta meta-interpolation meta-interpolation-rust punctuation punctuation-definition punctuation-definition-interpolation punctuation-definition-interpolation-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="11"><span>{}</span></div><div class="goto-47-75 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="11"><span>&quot;</span></div><div class="goto-47-75 punctuation punctuation-comma punctuation-comma-rust token" data-line="11"><span>,</span></div><div class="goto-47-75 token" data-line="11"><span> </span></div><div class="clickable goto-47-75 token variable variable-other variable-other-rust" data-line="11"><div class="goto-reference-instantly" data-goto-class="goto-69-1"></div><span>x</span></div><div class="goto-47-75 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="11"><span>)</span></div><div class="goto-47-75 punctuation punctuation-semi punctuation-semi-rust token" data-line="11"><span>;</span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="12"><span></span></div></div><div class="code-line"><div class="goto-47-75 token" data-line="13"><span></span></div><div class="goto-47-75 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="13"><span>}</span></div></div><div class="code-line"><div class="token" data-line="14"><span></span></div></div><div class="code-line"><div class="token" data-line="15"><span></span></div><div class="goto-124-28 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="15"><span>fn</span></div><div class="goto-124-28 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="15"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-124-28 goto-127-6 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="15"><span>test_1</span></div><div class="goto-124-28 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="15"><span>()</span></div><div class="goto-124-28 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="15"><span> {</span></div></div><div class="code-line"><div class="goto-124-28 token" data-line="16"><span>    </span></div><div class="clickable entity entity-name entity-name-function entity-name-function-rust goto-124-28 meta meta-function meta-function-call meta-function-call-rust token" data-line="16"><div class="goto-reference-instantly" data-goto-class="goto-47-75"></div><span>test_2</span></div><div class="goto-124-28 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="16"><span>(</span></div><div class="goto-124-28 meta meta-function meta-function-call meta-function-call-rust token" data-line="16"><span>)</span></div></div><div class="code-line"><div class="goto-124-28 token" data-line="17"><span></span></div><div class="goto-124-28 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="17"><span>}</span></div></div><div class="code-line"><div class="token" data-line="18"><span></span></div></div><div class="code-line"><div class="token" data-line="19"><span></span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust punctuation punctuation-definition punctuation-definition-attribute punctuation-definition-attribute-rust token" data-line="19"><span>#</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust punctuation punctuation-brackets punctuation-brackets-attribute punctuation-brackets-attribute-rust token" data-line="19"><span>[</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust token" data-line="19"><span>derive</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="19"><span>(</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust token" data-line="19"><span>Debug</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="19"><span>,</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust token" data-line="19"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust token" data-line="19"><span>Clone</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="19"><span>)</span></div><div class="goto-154-141 goto-154-23 meta meta-attribute meta-attribute-rust token" data-line="19"><span>]</span></div></div><div class="code-line"><div class="goto-154-141 token" data-line="20"><span></span></div><div class="goto-154-141 keyword keyword-other keyword-other-rust token" data-line="20"><span>pub</span></div><div class="goto-154-141 token" data-line="20"><span> </span></div><div class="goto-154-141 keyword keyword-declaration keyword-declaration-struct keyword-declaration-struct-rust keyword-declaration-struct-rust-storage keyword-declaration-struct-rust-storage-type keyword-declaration-struct-rust-storage-type-rust token" data-line="20"><span>struct</span></div><div class="goto-154-141 token" data-line="20"><span> </span></div><div class="clickable entity entity-name entity-name-type entity-name-type-struct entity-name-type-struct-rust goto-154-141 goto-189-7 token" data-line="20"><div class="background border foreground reference-popup"><div class="reference-item" data-goto-class="goto-154-23"><span class="description">implementation</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-297-1053"><span class="description">implementation</span><span class="context">line 27</span></div><div class="reference-item" data-goto-class="goto-1352-750"><span class="description">implementation</span><span class="context">line 69</span></div></div><span>Options</span></div><div class="goto-154-141 token" data-line="20"><span> </span></div><div class="goto-154-141 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="20"><span>{</span></div></div><div class="code-line"><div class="goto-154-141 token" data-line="21"><span>    </span></div><div class="goto-154-141 goto-203-24 goto-203-7 token variable variable-other variable-other-rust" data-line="21"><span>options</span></div><div class="goto-154-141 goto-203-24 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="21"><span>:</span></div><div class="goto-154-141 goto-203-24 token" data-line="21"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-203-24 token" data-line="21"><span>HashSet</span></div><div class="goto-154-141 goto-203-24 punctuation punctuation-brackets punctuation-brackets-angle punctuation-brackets-angle-rust token" data-line="21"><span>&lt;</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-203-24 token" data-line="21"><span>String</span></div><div class="goto-154-141 goto-203-24 token" data-line="21"><span>&gt;</span></div><div class="goto-154-141 punctuation punctuation-comma punctuation-comma-rust token" data-line="21"><span>,</span></div></div><div class="code-line"><div class="goto-154-141 token" data-line="22"><span>    </span></div><div class="goto-154-141 goto-233-12 goto-233-7 token variable variable-other variable-other-rust" data-line="22"><span>lastpos</span></div><div class="goto-154-141 goto-233-12 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="22"><span>:</span></div><div class="goto-154-141 goto-233-12 token" data-line="22"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-numeric entity-name-type-numeric-rust goto-154-141 goto-233-12 token" data-line="22"><span>u64</span></div><div class="goto-154-141 punctuation punctuation-comma punctuation-comma-rust token" data-line="22"><span>,</span></div></div><div class="code-line"><div class="goto-154-141 token" data-line="23"><span>    </span></div><div class="goto-154-141 goto-251-21 goto-251-8 token variable variable-other variable-other-rust" data-line="23"><span>messages</span></div><div class="goto-154-141 goto-251-21 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="23"><span>:</span></div><div class="goto-154-141 goto-251-21 token" data-line="23"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-251-21 token" data-line="23"><span>Vec</span></div><div class="goto-154-141 goto-251-21 punctuation punctuation-brackets punctuation-brackets-angle punctuation-brackets-angle-rust token" data-line="23"><span>&lt;</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-251-21 token" data-line="23"><span>String</span></div><div class="goto-154-141 goto-251-21 token" data-line="23"><span>&gt;</span></div><div class="goto-154-141 punctuation punctuation-comma punctuation-comma-rust token" data-line="23"><span>,</span></div></div><div class="code-line"><div class="goto-154-141 token" data-line="24"><span>    </span></div><div class="goto-154-141 goto-278-14 goto-278-6 token variable variable-other variable-other-rust" data-line="24"><span>source</span></div><div class="goto-154-141 goto-278-14 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="24"><span>:</span></div><div class="goto-154-141 goto-278-14 token" data-line="24"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-154-141 goto-278-14 token" data-line="24"><span>String</span></div><div class="goto-154-141 punctuation punctuation-comma punctuation-comma-rust token" data-line="24"><span>,</span></div></div><div class="code-line"><div class="goto-154-141 token" data-line="25"><span></span></div><div class="goto-154-141 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="25"><span>}</span></div></div><div class="code-line"><div class="token" data-line="26"><span></span></div></div><div class="code-line"><div class="token" data-line="27"><span></span></div><div class="goto-297-1053 keyword keyword-other keyword-other-rust token" data-line="27"><span>impl</span></div><div class="goto-297-1053 token" data-line="27"><span> </span></div><div class="clickable entity entity-name entity-name-type entity-name-type-rust goto-297-1053 goto-302-7 token" data-line="27"><div class="background border foreground reference-popup"><div class="reference-item" data-goto-class="goto-154-141"><span class="description">declaration + definition</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-154-23"><span class="description">implementation</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-1352-750"><span class="description">implementation</span><span class="context">line 69</span></div></div><span>Options</span></div><div class="goto-297-1053 token" data-line="27"><span> </span></div><div class="goto-297-1053 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="27"><span>{</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="28"><span>    </span></div><div class="goto-297-1053 goto-316-178 keyword keyword-other keyword-other-rust token" data-line="28"><span>pub</span></div><div class="goto-297-1053 goto-316-178 token" data-line="28"><span> </span></div><div class="goto-297-1053 goto-316-178 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span>fn</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-316-178 goto-323-3 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span>new</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="28"><span>(</span></div><div class="goto-297-1053 goto-316-178 goto-327-6 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="28"><span>source</span></div><div class="goto-297-1053 goto-316-178 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span>:</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span>String</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="28"><span>)</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span> </span></div><div class="goto-297-1053 goto-316-178 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span>-&gt;</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span> </span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="28"><span>Self</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="28"><span> {</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="29"><span>        </span></div><div class="goto-297-1053 goto-316-178 token variable variable-language variable-language-self variable-language-self-rust" data-line="29"><span>Self</span></div><div class="goto-297-1053 goto-316-178 token" data-line="29"><span> </span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="29"><span>{</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="30"><span>            </span></div><div class="clickable goto-297-1053 goto-316-178 token variable variable-other variable-other-rust" data-line="30"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-297-1053 goto-316-178 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="30"><span>:</span></div><div class="goto-297-1053 goto-316-178 token" data-line="30"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-297-1053 goto-316-178 token" data-line="30"><span>HashSet</span></div><div class="goto-297-1053 goto-316-178 keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust token" data-line="30"><span>::</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-316-178 meta meta-function meta-function-call meta-function-call-rust token" data-line="30"><span>new</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="30"><span>(</span></div><div class="goto-297-1053 goto-316-178 meta meta-function meta-function-call meta-function-call-rust token" data-line="30"><span>)</span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-comma punctuation-comma-rust token" data-line="30"><span>,</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="31"><span>            </span></div><div class="clickable goto-297-1053 goto-316-178 token variable variable-other variable-other-rust" data-line="31"><div class="goto-reference-instantly" data-goto-class="goto-233-12"></div><span>lastpos</span></div><div class="goto-297-1053 goto-316-178 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="31"><span>:</span></div><div class="goto-297-1053 goto-316-178 token" data-line="31"><span> </span></div><div class="constant constant-numeric constant-numeric-decimal constant-numeric-decimal-rust goto-297-1053 goto-316-178 token" data-line="31"><span>0</span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-comma punctuation-comma-rust token" data-line="31"><span>,</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="32"><span>            </span></div><div class="clickable goto-297-1053 goto-316-178 token variable variable-other variable-other-rust" data-line="32"><div class="goto-reference-instantly" data-goto-class="goto-251-21"></div><span>messages</span></div><div class="goto-297-1053 goto-316-178 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust token" data-line="32"><span>:</span></div><div class="goto-297-1053 goto-316-178 token" data-line="32"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-297-1053 goto-316-178 meta meta-macro meta-macro-rust token" data-line="32"><span>vec!</span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-brackets punctuation-brackets-square punctuation-brackets-square-rust token" data-line="32"><span>[]</span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-comma punctuation-comma-rust token" data-line="32"><span>,</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="33"><span>            </span></div><div class="clickable goto-297-1053 goto-316-178 token variable variable-other variable-other-rust" data-line="33"><div class="background border foreground reference-popup"><div class="reference-item" data-goto-class="goto-278-14"><span class="description">declaration + definition</span><span class="context">line 24</span></div><div class="reference-item" data-goto-class="goto-327-6"><span class="description">definition</span><span class="context">line 28</span></div></div><span>source</span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-comma punctuation-comma-rust token" data-line="33"><span>,</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="34"><span>        </span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="34"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 goto-316-178 token" data-line="35"><span>    </span></div><div class="goto-297-1053 goto-316-178 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="35"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="36"><span></span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="37"><span>    </span></div><div class="goto-297-1053 goto-500-129 keyword keyword-other keyword-other-rust token" data-line="37"><span>pub</span></div><div class="goto-297-1053 goto-500-129 token" data-line="37"><span> </span></div><div class="goto-297-1053 goto-500-129 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>fn</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-500-129 goto-507-7 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>message</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="37"><span>(</span></div><div class="goto-297-1053 goto-500-129 goto-515-8 meta meta-function meta-function-definition meta-function-definition-rust storage storage-modifier storage-modifier-mut storage-modifier-mut-rust token" data-line="37"><span>mut</span></div><div class="goto-297-1053 goto-500-129 goto-515-8 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="goto-297-1053 goto-500-129 goto-515-8 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="37"><span>self</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="37"><span>,</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="goto-297-1053 goto-500-129 goto-525-3 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="37"><span>msg</span></div><div class="goto-297-1053 goto-500-129 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>:</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="goto-297-1053 goto-500-129 keyword keyword-other keyword-other-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>impl</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>AsRef</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-angle punctuation-brackets-angle-rust token" data-line="37"><span>&lt;</span></div><div class="entity entity-name entity-name-type entity-name-type-primitive entity-name-type-primitive-rust goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>str</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>&gt;</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="37"><span>)</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="goto-297-1053 goto-500-129 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span>-&gt;</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> </span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="37"><span>Self</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="37"><span> {</span></div></div><div class="code-line"><div class="goto-297-1053 goto-500-129 token" data-line="38"><span>        </span></div><div class="clickable goto-297-1053 goto-500-129 token variable variable-language variable-language-self variable-language-self-rust" data-line="38"><div class="goto-reference-instantly" data-goto-class="goto-515-8"></div><span>self</span></div><div class="goto-297-1053 goto-500-129 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="38"><span>.</span></div><div class="clickable goto-297-1053 goto-500-129 token variable variable-other variable-other-rust" data-line="38"><div class="goto-reference-instantly" data-goto-class="goto-251-21"></div><span>messages</span></div><div class="goto-297-1053 goto-500-129 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="38"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>push</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="38"><span>(</span></div><div class="clickable goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust token variable variable-other variable-other-rust" data-line="38"><div class="goto-reference-instantly" data-goto-class="goto-525-3"></div><span>msg</span></div><div class="goto-297-1053 goto-500-129 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>as_ref</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="38"><span>(</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>)</span></div><div class="goto-297-1053 goto-500-129 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>to_string</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="38"><span>(</span></div><div class="goto-297-1053 goto-500-129 meta meta-function meta-function-call meta-function-call-rust token" data-line="38"><span>))</span></div><div class="goto-297-1053 goto-500-129 punctuation punctuation-semi punctuation-semi-rust token" data-line="38"><span>;</span></div></div><div class="code-line"><div class="goto-297-1053 goto-500-129 token" data-line="39"><span>        </span></div><div class="clickable goto-297-1053 goto-500-129 token variable variable-language variable-language-self variable-language-self-rust" data-line="39"><div class="goto-reference-instantly" data-goto-class="goto-515-8"></div><span>self</span></div></div><div class="code-line"><div class="goto-297-1053 goto-500-129 token" data-line="40"><span>    </span></div><div class="goto-297-1053 goto-500-129 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="40"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="41"><span></span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="42"><span>    </span></div><div class="goto-297-1053 goto-635-133 keyword keyword-other keyword-other-rust token" data-line="42"><span>pub</span></div><div class="goto-297-1053 goto-635-133 token" data-line="42"><span> </span></div><div class="goto-297-1053 goto-635-133 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span>fn</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-635-133 goto-642-3 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span>pos</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="42"><span>(</span></div><div class="goto-297-1053 goto-635-133 goto-646-8 meta meta-function meta-function-definition meta-function-definition-rust storage storage-modifier storage-modifier-mut storage-modifier-mut-rust token" data-line="42"><span>mut</span></div><div class="goto-297-1053 goto-635-133 goto-646-8 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> </span></div><div class="goto-297-1053 goto-635-133 goto-646-8 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="42"><span>self</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="42"><span>,</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> </span></div><div class="goto-297-1053 goto-635-133 goto-656-3 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="42"><span>pos</span></div><div class="goto-297-1053 goto-635-133 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span>:</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-numeric entity-name-type-numeric-rust goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span>u64</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="42"><span>)</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> </span></div><div class="goto-297-1053 goto-635-133 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span>-&gt;</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> </span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="42"><span>Self</span></div><div class="goto-297-1053 goto-635-133 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="42"><span> {</span></div></div><div class="code-line"><div class="goto-297-1053 goto-635-133 token" data-line="43"><span>        </span></div><div class="goto-297-1053 goto-635-133 keyword keyword-control keyword-control-rust token" data-line="43"><span>if</span></div><div class="goto-297-1053 goto-635-133 token" data-line="43"><span> </span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-other variable-other-rust" data-line="43"><div class="goto-reference-instantly" data-goto-class="goto-656-3"></div><span>pos</span></div><div class="goto-297-1053 goto-635-133 token" data-line="43"><span> </span></div><div class="goto-297-1053 goto-635-133 punctuation punctuation-brackets punctuation-brackets-angle punctuation-brackets-angle-rust token" data-line="43"><span>&gt;</span></div><div class="goto-297-1053 goto-635-133 token" data-line="43"><span> </span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-language variable-language-self variable-language-self-rust" data-line="43"><div class="goto-reference-instantly" data-goto-class="goto-646-8"></div><span>self</span></div><div class="goto-297-1053 goto-635-133 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="43"><span>.</span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-other variable-other-rust" data-line="43"><div class="goto-reference-instantly" data-goto-class="goto-233-12"></div><span>lastpos</span></div><div class="goto-297-1053 goto-635-133 token" data-line="43"><span> </span></div><div class="goto-297-1053 goto-635-133 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="43"><span>{</span></div></div><div class="code-line"><div class="goto-297-1053 goto-635-133 token" data-line="44"><span>            </span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-language variable-language-self variable-language-self-rust" data-line="44"><div class="goto-reference-instantly" data-goto-class="goto-646-8"></div><span>self</span></div><div class="goto-297-1053 goto-635-133 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="44"><span>.</span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-other variable-other-rust" data-line="44"><div class="goto-reference-instantly" data-goto-class="goto-233-12"></div><span>lastpos</span></div><div class="goto-297-1053 goto-635-133 token" data-line="44"><span> </span></div><div class="goto-297-1053 goto-635-133 keyword keyword-operator keyword-operator-assignment keyword-operator-assignment-equal keyword-operator-assignment-equal-rust token" data-line="44"><span>=</span></div><div class="goto-297-1053 goto-635-133 token" data-line="44"><span> </span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-other variable-other-rust" data-line="44"><div class="goto-reference-instantly" data-goto-class="goto-656-3"></div><span>pos</span></div><div class="goto-297-1053 goto-635-133 punctuation punctuation-semi punctuation-semi-rust token" data-line="44"><span>;</span></div></div><div class="code-line"><div class="goto-297-1053 goto-635-133 token" data-line="45"><span>        </span></div><div class="goto-297-1053 goto-635-133 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="45"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 goto-635-133 token" data-line="46"><span>        </span></div><div class="clickable goto-297-1053 goto-635-133 token variable variable-language variable-language-self variable-language-self-rust" data-line="46"><div class="goto-reference-instantly" data-goto-class="goto-646-8"></div><span>self</span></div></div><div class="code-line"><div class="goto-297-1053 goto-635-133 token" data-line="47"><span>    </span></div><div class="goto-297-1053 goto-635-133 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="47"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="48"><span></span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="49"><span>    </span></div><div class="goto-297-1053 goto-774-147 keyword keyword-other keyword-other-rust token" data-line="49"><span>pub</span></div><div class="goto-297-1053 goto-774-147 token" data-line="49"><span> </span></div><div class="goto-297-1053 goto-774-147 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span>fn</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-774-147 goto-781-5 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span>merge</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="49"><span>(</span></div><div class="goto-297-1053 goto-774-147 goto-787-8 meta meta-function meta-function-definition meta-function-definition-rust storage storage-modifier storage-modifier-mut storage-modifier-mut-rust token" data-line="49"><span>mut</span></div><div class="goto-297-1053 goto-774-147 goto-787-8 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> </span></div><div class="goto-297-1053 goto-774-147 goto-787-8 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="49"><span>self</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="49"><span>,</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> </span></div><div class="goto-297-1053 goto-774-147 goto-797-5 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="49"><span>other</span></div><div class="goto-297-1053 goto-774-147 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span>:</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> </span></div><div class="clickable entity entity-name entity-name-type entity-name-type-rust goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><div class="background border foreground reference-popup"><div class="reference-item" data-goto-class="goto-154-141"><span class="description">declaration + definition</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-154-23"><span class="description">implementation</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-1352-750"><span class="description">implementation</span><span class="context">line 69</span></div></div><span>Options</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="49"><span>)</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> </span></div><div class="goto-297-1053 goto-774-147 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span>-&gt;</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> </span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="49"><span>Self</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="49"><span> {</span></div></div><div class="code-line"><div class="goto-297-1053 goto-774-147 token" data-line="50"><span>        </span></div><div class="goto-297-1053 goto-774-147 keyword keyword-control keyword-control-rust token" data-line="50"><span>for</span></div><div class="goto-297-1053 goto-774-147 token" data-line="50"><span> </span></div><div class="goto-297-1053 goto-774-147 goto-835-1 token variable variable-other variable-other-rust" data-line="50"><span>i</span></div><div class="goto-297-1053 goto-774-147 token" data-line="50"><span> </span></div><div class="goto-297-1053 goto-774-147 keyword keyword-other keyword-other-rust token" data-line="50"><span>in</span></div><div class="goto-297-1053 goto-774-147 token" data-line="50"><span> </span></div><div class="clickable goto-297-1053 goto-774-147 token variable variable-other variable-other-rust" data-line="50"><div class="goto-reference-instantly" data-goto-class="goto-797-5"></div><span>other</span></div><div class="goto-297-1053 goto-774-147 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="50"><span>.</span></div><div class="clickable goto-297-1053 goto-774-147 token variable variable-other variable-other-rust" data-line="50"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-297-1053 goto-774-147 token" data-line="50"><span> </span></div><div class="goto-297-1053 goto-774-147 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="50"><span>{</span></div></div><div class="code-line"><div class="goto-297-1053 goto-774-147 token" data-line="51"><span>            </span></div><div class="clickable goto-297-1053 goto-774-147 token variable variable-language variable-language-self variable-language-self-rust" data-line="51"><div class="goto-reference-instantly" data-goto-class="goto-787-8"></div><span>self</span></div><div class="goto-297-1053 goto-774-147 token" data-line="51"><span> </span></div><div class="goto-297-1053 goto-774-147 keyword keyword-operator keyword-operator-assignment keyword-operator-assignment-equal keyword-operator-assignment-equal-rust token" data-line="51"><span>=</span></div><div class="goto-297-1053 goto-774-147 token" data-line="51"><span> </span></div><div class="clickable goto-297-1053 goto-774-147 token variable variable-language variable-language-self variable-language-self-rust" data-line="51"><div class="goto-reference-instantly" data-goto-class="goto-787-8"></div><span>self</span></div><div class="goto-297-1053 goto-774-147 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="51"><span>.</span></div><div class="clickable entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-774-147 meta meta-function meta-function-call meta-function-call-rust token" data-line="51"><div class="goto-reference-instantly" data-goto-class="goto-1043-305"></div><span>add_str</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="51"><span>(</span></div><div class="clickable goto-297-1053 goto-774-147 meta meta-function meta-function-call meta-function-call-rust token variable variable-other variable-other-rust" data-line="51"><div class="goto-reference-instantly" data-goto-class="goto-835-1"></div><span>i</span></div><div class="goto-297-1053 goto-774-147 meta meta-function meta-function-call meta-function-call-rust token" data-line="51"><span>)</span></div><div class="goto-297-1053 goto-774-147 punctuation punctuation-semi punctuation-semi-rust token" data-line="51"><span>;</span></div></div><div class="code-line"><div class="goto-297-1053 goto-774-147 token" data-line="52"><span>        </span></div><div class="goto-297-1053 goto-774-147 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="52"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 goto-774-147 token" data-line="53"><span></span></div></div><div class="code-line"><div class="goto-297-1053 goto-774-147 token" data-line="54"><span>        </span></div><div class="clickable goto-297-1053 goto-774-147 token variable variable-language variable-language-self variable-language-self-rust" data-line="54"><div class="goto-reference-instantly" data-goto-class="goto-787-8"></div><span>self</span></div></div><div class="code-line"><div class="goto-297-1053 goto-774-147 token" data-line="55"><span>    </span></div><div class="goto-297-1053 goto-774-147 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="55"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="56"><span></span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="57"><span>    </span></div><div class="goto-297-1053 goto-927-110 keyword keyword-other keyword-other-rust token" data-line="57"><span>pub</span></div><div class="goto-297-1053 goto-927-110 token" data-line="57"><span> </span></div><div class="goto-297-1053 goto-927-110 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span>fn</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-927-110 goto-934-3 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span>add</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="57"><span>(</span></div><div class="goto-297-1053 goto-927-110 goto-938-8 meta meta-function meta-function-definition meta-function-definition-rust storage storage-modifier storage-modifier-mut storage-modifier-mut-rust token" data-line="57"><span>mut</span></div><div class="goto-297-1053 goto-927-110 goto-938-8 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> </span></div><div class="goto-297-1053 goto-927-110 goto-938-8 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="57"><span>self</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="57"><span>,</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> </span></div><div class="goto-297-1053 goto-927-110 goto-948-5 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="57"><span>value</span></div><div class="goto-297-1053 goto-927-110 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span>:</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-primitive entity-name-type-primitive-rust goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span>char</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="57"><span>)</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> </span></div><div class="goto-297-1053 goto-927-110 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span>-&gt;</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> </span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="57"><span>Self</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="57"><span> {</span></div></div><div class="code-line"><div class="goto-297-1053 goto-927-110 token" data-line="58"><span>        </span></div><div class="clickable goto-297-1053 goto-927-110 token variable variable-language variable-language-self variable-language-self-rust" data-line="58"><div class="goto-reference-instantly" data-goto-class="goto-938-8"></div><span>self</span></div><div class="goto-297-1053 goto-927-110 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="58"><span>.</span></div><div class="clickable goto-297-1053 goto-927-110 token variable variable-other variable-other-rust" data-line="58"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-297-1053 goto-927-110 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="58"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-927-110 meta meta-function meta-function-call meta-function-call-rust token" data-line="58"><span>insert</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="58"><span>(</span></div><div class="clickable goto-297-1053 goto-927-110 meta meta-function meta-function-call meta-function-call-rust token variable variable-other variable-other-rust" data-line="58"><div class="goto-reference-instantly" data-goto-class="goto-948-5"></div><span>value</span></div><div class="goto-297-1053 goto-927-110 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="58"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-297-1053 goto-927-110 meta meta-function meta-function-call meta-function-call-rust token" data-line="58"><span>to_string</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="58"><span>(</span></div><div class="goto-297-1053 goto-927-110 meta meta-function meta-function-call meta-function-call-rust token" data-line="58"><span>))</span></div><div class="goto-297-1053 goto-927-110 punctuation punctuation-semi punctuation-semi-rust token" data-line="58"><span>;</span></div></div><div class="code-line"><div class="goto-297-1053 goto-927-110 token" data-line="59"><span>        </span></div><div class="clickable goto-297-1053 goto-927-110 token variable variable-language variable-language-self variable-language-self-rust" data-line="59"><div class="goto-reference-instantly" data-goto-class="goto-938-8"></div><span>self</span></div></div><div class="code-line"><div class="goto-297-1053 goto-927-110 token" data-line="60"><span>    </span></div><div class="goto-297-1053 goto-927-110 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="60"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="61"><span></span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="62"><span>    </span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-other keyword-other-rust token" data-line="62"><span>pub</span></div><div class="goto-1043-305 goto-297-1053 token" data-line="62"><span> </span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>fn</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1043-305 goto-1050-7 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>add_str</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="62"><span>(</span></div><div class="goto-1043-305 goto-1058-8 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust storage storage-modifier storage-modifier-mut storage-modifier-mut-rust token" data-line="62"><span>mut</span></div><div class="goto-1043-305 goto-1058-8 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="goto-1043-305 goto-1058-8 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="62"><span>self</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="62"><span>,</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="goto-1043-305 goto-1068-5 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="62"><span>value</span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>:</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-other keyword-other-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>impl</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>AsRef</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-angle punctuation-brackets-angle-rust token" data-line="62"><span>&lt;</span></div><div class="entity entity-name entity-name-type entity-name-type-primitive entity-name-type-primitive-rust goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>str</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>&gt;</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="62"><span>)</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span>-&gt;</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> </span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="62"><span>Self</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="62"><span> {</span></div></div><div class="code-line"><div class="goto-1043-305 goto-297-1053 token" data-line="63"><span>        </span></div><div class="clickable goto-1043-305 goto-297-1053 token variable variable-language variable-language-self variable-language-self-rust" data-line="63"><div class="goto-reference-instantly" data-goto-class="goto-1058-8"></div><span>self</span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="63"><span>.</span></div><div class="clickable goto-1043-305 goto-297-1053 token variable variable-other variable-other-rust" data-line="63"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="63"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>insert</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="63"><span>(</span></div><div class="clickable goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust token variable variable-other variable-other-rust" data-line="63"><div class="goto-reference-instantly" data-goto-class="goto-1068-5"></div><span>value</span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>as_ref</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="63"><span>(</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>)</span></div><div class="goto-1043-305 goto-297-1053 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>to_string</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="63"><span>(</span></div><div class="goto-1043-305 goto-297-1053 meta meta-function meta-function-call meta-function-call-rust token" data-line="63"><span>))</span></div><div class="goto-1043-305 goto-297-1053 punctuation punctuation-semi punctuation-semi-rust token" data-line="63"><span>;</span></div></div><div class="code-line"><div class="goto-1043-305 goto-297-1053 token" data-line="64"><span>        </span></div><div class="clickable goto-1043-305 goto-297-1053 token variable variable-language variable-language-self variable-language-self-rust" data-line="64"><div class="goto-reference-instantly" data-goto-class="goto-1058-8"></div><span>self</span></div></div><div class="code-line"><div class="goto-1043-305 goto-297-1053 token" data-line="65"><span></span></div><div class="comment comment-line comment-line-double comment-line-double-slash comment-line-double-slash-rust goto-1043-305 goto-297-1053 token" data-line="65"><span>        // THIS IS JUST A VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY LONG LINE</span></div></div><div class="code-line"><div class="goto-1043-305 goto-297-1053 token" data-line="66"><span>    </span></div><div class="goto-1043-305 goto-297-1053 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="66"><span>}</span></div></div><div class="code-line"><div class="goto-297-1053 token" data-line="67"><span></span></div><div class="goto-297-1053 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="67"><span>}</span></div></div><div class="code-line"><div class="token" data-line="68"><span></span></div></div><div class="code-line"><div class="token" data-line="69"><span></span></div><div class="goto-1352-750 keyword keyword-other keyword-other-rust token" data-line="69"><span>impl</span></div><div class="goto-1352-750 token" data-line="69"><span> </span></div><div class="entity entity-name entity-name-namespace entity-name-namespace-rust goto-1352-750 token" data-line="69"><span>fmt</span></div><div class="goto-1352-750 keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust token" data-line="69"><span>::</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-1352-750 token" data-line="69"><span>Display</span></div><div class="goto-1352-750 token" data-line="69"><span> </span></div><div class="goto-1352-750 keyword keyword-control keyword-control-rust token" data-line="69"><span>for</span></div><div class="goto-1352-750 token" data-line="69"><span> </span></div><div class="clickable entity entity-name entity-name-type entity-name-type-rust goto-1352-750 goto-1374-7 token" data-line="69"><div class="background border foreground reference-popup"><div class="reference-item" data-goto-class="goto-154-141"><span class="description">declaration + definition</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-154-23"><span class="description">implementation</span><span class="context">line 19</span></div><div class="reference-item" data-goto-class="goto-297-1053"><span class="description">implementation</span><span class="context">line 27</span></div></div><span>Options</span></div><div class="goto-1352-750 token" data-line="69"><span> </span></div><div class="goto-1352-750 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="69"><span>{</span></div></div><div class="code-line"><div class="goto-1352-750 token" data-line="70"><span>    </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-other keyword-other-fn keyword-other-fn-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>fn</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> </span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 goto-1391-3 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>fmt</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="70"><span>(</span></div><div class="goto-1352-750 goto-1388-712 goto-1395-5 keyword keyword-operator keyword-operator-borrow keyword-operator-borrow-and keyword-operator-borrow-and-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>&amp;</span></div><div class="goto-1352-750 goto-1388-712 goto-1395-5 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="70"><span>self</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-comma punctuation-comma-rust token" data-line="70"><span>,</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> </span></div><div class="goto-1352-750 goto-1388-712 goto-1402-1 meta meta-function meta-function-definition meta-function-definition-rust token variable variable-other variable-other-rust" data-line="70"><span>f</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-key keyword-operator-key-value keyword-operator-key-value-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>:</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-borrow keyword-operator-borrow-and keyword-operator-borrow-and-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>&amp;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust storage storage-modifier storage-modifier-mut storage-modifier-mut-rust token" data-line="70"><span>mut</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> </span></div><div class="entity entity-name entity-name-namespace entity-name-namespace-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>fmt</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>::</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>Formatter</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-angle punctuation-brackets-angle-rust token" data-line="70"><span>&lt;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-definition punctuation-definition-lifetime punctuation-definition-lifetime-rust token" data-line="70"><span>&#x27;</span></div><div class="entity entity-name entity-name-type entity-name-type-lifetime entity-name-type-lifetime-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>_</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>&gt;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="70"><span>)</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-arrow keyword-operator-arrow-skinny keyword-operator-arrow-skinny-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>-&gt;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> </span></div><div class="entity entity-name entity-name-namespace entity-name-namespace-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>fmt</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-namespace keyword-operator-namespace-rust meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>::</span></div><div class="entity entity-name entity-name-type entity-name-type-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span>Result</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-definition meta-function-definition-rust token" data-line="70"><span> {</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="71"><span>        </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="71"><span>writeln!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="71"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="71"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="71"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="71"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="71"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-interpolation meta-interpolation-rust punctuation punctuation-definition punctuation-definition-interpolation punctuation-definition-interpolation-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="71"><span>{}</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="71"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="71"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="71"><span> </span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-language variable-language-self variable-language-self-rust" data-line="71"><div class="goto-reference-instantly" data-goto-class="goto-1395-5"></div><span>self</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="71"><span>.</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="71"><div class="goto-reference-instantly" data-goto-class="goto-278-14"></div><span>source</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="71"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="71"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="71"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="72"><span>        </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="72"><span>writeln!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="72"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="72"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="72"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="72"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="72"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-interpolation meta-interpolation-rust punctuation punctuation-definition punctuation-definition-interpolation punctuation-definition-interpolation-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="72"><span>{}</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="72"><span>^&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="72"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="72"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="72"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="72"><span> &quot;</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="72"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span>repeat</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="72"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token variable variable-language variable-language-self variable-language-self-rust" data-line="72"><div class="goto-reference-instantly" data-goto-class="goto-1395-5"></div><span>self</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span>.</span></div><div class="clickable goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token variable variable-other variable-other-rust" data-line="72"><div class="goto-reference-instantly" data-goto-class="goto-233-12"></div><span>lastpos</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-other keyword-other-rust meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span>as</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span> </span></div><div class="entity entity-name entity-name-type entity-name-type-numeric entity-name-type-numeric-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span>usize</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="72"><span>)</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="72"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="72"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="72"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="73"><span></span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="74"><span>        </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-control keyword-control-rust token" data-line="74"><span>if</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="74"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-logical keyword-operator-logical-rust token" data-line="74"><span>!</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-language variable-language-self variable-language-self-rust" data-line="74"><div class="goto-reference-instantly" data-goto-class="goto-1395-5"></div><span>self</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="74"><span>.</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="74"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="74"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="74"><span>is_empty</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="74"><span>(</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="74"><span>)</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="74"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="74"><span>{</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="75"><span>            </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="75"><span>writeln!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="75"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="75"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="75"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="75"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="75"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="75"><span>An error occurred: unexpected character.&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="75"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="75"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="75"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="76"><span>            </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="76"><span>write!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="76"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="76"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="76"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="76"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="76"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="76"><span>Expected any of: [&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="76"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="76"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="76"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="77"><span>            </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-control keyword-control-rust token" data-line="77"><span>for</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="77"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="77"><span>(</span></div><div class="goto-1352-750 goto-1388-712 goto-1724-5 token variable variable-other variable-other-rust" data-line="77"><span>index</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="77"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="77"><span> </span></div><div class="goto-1352-750 goto-1388-712 goto-1731-1 token variable variable-other variable-other-rust" data-line="77"><span>i</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="77"><span>)</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="77"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-other keyword-other-rust token" data-line="77"><span>in</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="77"><span> </span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-language variable-language-self variable-language-self-rust" data-line="77"><div class="goto-reference-instantly" data-goto-class="goto-1395-5"></div><span>self</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="77"><span>.</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="77"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="77"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="77"><span>iter</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="77"><span>(</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="77"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="77"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="77"><span>enumerate</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="77"><span>(</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="77"><span>)</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="77"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="77"><span>{</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="78"><span>                </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="78"><span>write!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="78"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="78"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="78"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="78"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="78"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-interpolation meta-interpolation-rust punctuation punctuation-definition punctuation-definition-interpolation punctuation-definition-interpolation-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="78"><span>{}</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="78"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="78"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="78"><span> </span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="78"><div class="goto-reference-instantly" data-goto-class="goto-1731-1"></div><span>i</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="78"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="78"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="78"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="79"><span></span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span>                </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-control keyword-control-rust token" data-line="80"><span>if</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span> </span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="80"><div class="goto-reference-instantly" data-goto-class="goto-1724-5"></div><span>index</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-comparison keyword-operator-comparison-rust token" data-line="80"><span>!=</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span> </span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-language variable-language-self variable-language-self-rust" data-line="80"><div class="goto-reference-instantly" data-goto-class="goto-1395-5"></div><span>self</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="80"><span>.</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="80"><div class="goto-reference-instantly" data-goto-class="goto-203-24"></div><span>options</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="80"><span>.</span></div><div class="entity entity-name entity-name-function entity-name-function-rust goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="80"><span>len</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="80"><span>(</span></div><div class="goto-1352-750 goto-1388-712 meta meta-function meta-function-call meta-function-call-rust token" data-line="80"><span>)</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-math keyword-operator-math-rust token" data-line="80"><span>-</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span> </span></div><div class="constant constant-numeric constant-numeric-decimal constant-numeric-decimal-rust goto-1352-750 goto-1388-712 token" data-line="80"><span>1</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="80"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="80"><span>{</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="81"><span>                    </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="81"><span>write!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="81"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="81"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="81"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="81"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="81"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="81"><span>, &quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="81"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="81"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="81"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="82"><span>                </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="82"><span>}</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="83"><span>            </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="83"><span>}</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="84"><span>            </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="84"><span>writeln!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="84"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="84"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="84"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="84"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="84"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="84"><span>]&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="84"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="84"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="84"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="85"><span>            </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="85"><span>writeln!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="85"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="85"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="85"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="85"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="85"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="86"><span>        </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="86"><span>}</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="87"><span></span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="88"><span>        </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-control keyword-control-rust token" data-line="88"><span>for</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="88"><span> </span></div><div class="goto-1352-750 goto-1388-712 goto-2012-1 token variable variable-other variable-other-rust" data-line="88"><span>i</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="88"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-other keyword-other-rust token" data-line="88"><span>in</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="88"><span> </span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-borrow keyword-operator-borrow-and keyword-operator-borrow-and-rust token" data-line="88"><span>&amp;</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-language variable-language-self variable-language-self-rust" data-line="88"><div class="goto-reference-instantly" data-goto-class="goto-1395-5"></div><span>self</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-access keyword-operator-access-dot keyword-operator-access-dot-rust token" data-line="88"><span>.</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="88"><div class="goto-reference-instantly" data-goto-class="goto-251-21"></div><span>messages</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="88"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="88"><span>{</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="89"><span>            </span></div><div class="entity entity-name entity-name-function entity-name-function-macro entity-name-function-macro-rust goto-1352-750 goto-1388-712 meta meta-macro meta-macro-rust token" data-line="89"><span>writeln!</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="89"><span>(</span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="89"><div class="goto-reference-instantly" data-goto-class="goto-1402-1"></div><span>f</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="89"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="89"><span> </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-definition punctuation-definition-string punctuation-definition-string-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="89"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 meta meta-interpolation meta-interpolation-rust punctuation punctuation-definition punctuation-definition-interpolation punctuation-definition-interpolation-rust string string-quoted string-quoted-double string-quoted-double-rust token" data-line="89"><span>{}</span></div><div class="goto-1352-750 goto-1388-712 string string-quoted string-quoted-double string-quoted-double-rust token" data-line="89"><span>&quot;</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-comma punctuation-comma-rust token" data-line="89"><span>,</span></div><div class="goto-1352-750 goto-1388-712 token" data-line="89"><span> </span></div><div class="clickable goto-1352-750 goto-1388-712 token variable variable-other variable-other-rust" data-line="89"><div class="goto-reference-instantly" data-goto-class="goto-2012-1"></div><span>i</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="89"><span>)</span></div><div class="goto-1352-750 goto-1388-712 keyword keyword-operator keyword-operator-question keyword-operator-question-rust token" data-line="89"><span>?</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-semi punctuation-semi-rust token" data-line="89"><span>;</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="90"><span>        </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="90"><span>}</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="91"><span></span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="92"><span>        </span></div><div class="entity entity-name entity-name-type entity-name-type-result entity-name-type-result-rust goto-1352-750 goto-1388-712 token" data-line="92"><span>Ok</span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-round punctuation-brackets-round-rust token" data-line="92"><span>(())</span></div></div><div class="code-line"><div class="goto-1352-750 goto-1388-712 token" data-line="93"><span>    </span></div><div class="goto-1352-750 goto-1388-712 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="93"><span>}</span></div></div><div class="code-line"><div class="goto-1352-750 token" data-line="94"><span></span></div><div class="goto-1352-750 punctuation punctuation-brackets punctuation-brackets-curly punctuation-brackets-curly-rust token" data-line="94"><span>}</span></div></div><div class="code-line"><div class="token" data-line="95"><span></span></div></div></div></div></div><script>function change_theme(new_theme) {
+    for (const i of document.getElementsByClassName("change-theme")) {
+        i.className = `change-theme ${new_theme}`;
+    }
+}
+
+const highlights = new Map();
+
+function register_highlight(location) {
+    for (const i of highlights.keys()) {
+        clearTimeout(highlights.get(i));
+        for (const el of document.getElementsByClassName(i)) {
+            el.classList.remove("highlighted")
+        }
+    }
+    highlights.clear()
+
+    for (const i of document.getElementsByClassName(location)) {
+        i.classList.add("highlighted")
+    }
+
+    const cancel = setTimeout(() => {
+        for (const i of document.getElementsByClassName(location)) {
+            i.classList.remove("highlighted")
+        }
+
+        highlights.delete(location);
+    }, 2000);
+
+    highlights.set(location, cancel);
+}
+
+function go_to(location) {
+    register_highlight(location);
+
+    let el;
+    for (const i of document.getElementsByClassName(location)) {
+        if (!i.classList.contains("outline")) {
+            el = i;
+            break;
+        }
+    }
+
+    el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest"
+    })
+}
+
+document.getElementById("change-theme").onchange = function () {
+    change_theme(this.value)
+};
+
+document.onreadystatechange = () => {
+    change_theme(document.getElementById("change-theme").value);
+
+    for (const i of document.getElementsByClassName("outline-header")) {
+        i.onclick = () => {
+            go_to(i.dataset.gotoClass);
+        }
+    }
+
+    for (const i of document.getElementsByClassName("reference-item")) {
+        i.onclick = (evt) => {
+            evt.stopPropagation()
+            for (const i of document.getElementsByClassName("reference-popup")) {
+                i.style.display = "none";
+            }
+
+            go_to(i.dataset.gotoClass);
+        }
+    }
+
+
+    document.onclick = () => {
+        for (const i of document.getElementsByClassName("reference-popup")) {
+            i.style.display = "none";
+        }
+    };
+
+    for (const i of document.getElementsByClassName("token")) {
+        const reference_children = i.getElementsByClassName("goto-reference-instantly")
+        if (reference_children.length === 1) {
+            i.onclick = () => {
+                const child = reference_children[0];
+                go_to(child.dataset.gotoClass);
+            };
+        }
+
+        const popup_children = i.getElementsByClassName("reference-popup")
+        if (popup_children.length === 1) {
+            i.onclick = (e) => {
+                e.stopPropagation();
+
+                for (const i of document.getElementsByClassName("reference-popup")) {
+                    i.style.display = "none";
+                }
+
+                const popup = popup_children[0];
+                popup.style.display = "flex";
+            };
+        }
+    }
+}
+</script></div></body></html>

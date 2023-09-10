@@ -1,0 +1,21 @@
+let f = fn() { () };
+let g = fn() { () };
+
+use std;
+# ----
+effect Abort {
+    abort() a
+}
+
+let hAbort = handler {
+    return(x) { () }
+    abort() { () }
+};
+
+let main = {
+    handle[hAbort] {
+        abort();
+        f()
+    };
+    g()
+};

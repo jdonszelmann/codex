@@ -1,0 +1,60 @@
+mod Main {
+    effect Baz {
+        bob() ()
+    }
+
+    let baz = handler {
+        return(x) {
+            x
+        }
+        bob() {
+            resume(())
+        }
+    }
+
+    effect Foo! {
+        bar(()) ()
+    }
+
+    elaboration Foo! -> <Baz> {
+        bar(a) {
+            let b = handle baz {
+                a
+            };
+            b
+        }
+    }
+
+    # What should happen here?
+    # Well we have the following context:
+    #
+    #  - Identifiers: {Baz, Foo!, foo, main, bar, bob}
+    #  - Higher-order effects: {Foo! -> [bar]}
+    #  - Elaborations: {foo: Foo! -> <Baz>}
+    #  
+    # Steps:
+    #
+    # 1. Find the higher-order operations appearing in the computation within
+    #    `elab`: {bar}
+    # 2. Find the relevant effects: {Foo!}
+    # 3. Look for elaborations of Foo!
+    # 4. If none: type-error, if multiple: type-error
+    # 5. If exactly 1: rewrite to explicit elaboration
+    # 6. Bonus: compile the elaboration away before execution? This might
+    #    require some monomorphization-like techniques but should be possible.
+    #
+    # In this case, it's all happening at identifier level, which is not great.
+    # In reality, all identifiers in this example need to be prefixed by the
+    # name of the module in which they were defined for this to be correct.
+    #
+    # I'm also ignoring type parameters.
+    let main = fn() <> () {
+        handle baz {
+            elab {
+                bar({
+                    ()
+                })
+            }
+        }
+    }
+}

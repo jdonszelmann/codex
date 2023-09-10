@@ -1,0 +1,28 @@
+# The standard library contains basic functions for manipulation
+# of integers, booleans and strings.
+use std;
+
+# Functions are created with `fn` and bound with `let`, just like
+# other values. The last expression in a function is returned.
+let square = fn(x: Int) Int {
+    mul(x, x)
+};
+
+let is_even = fn(x: Int) Bool {
+    eq(0, modulo(x, 2))
+};
+
+# Type annotations can be inferred:
+let square_is_even = fn(x) {
+    let result = is_even(square(x));
+    if result { "even" } else { "odd" }
+};
+
+let give_answer = fn(f, s, x) {
+	let prefix = concat(concat(s, " "), show_int(x));
+    let text = concat(prefix, " is ");
+    let answer = f(x);
+    concat(text, answer)
+};
+
+let main = give_answer(square_is_even, "The square of", 4);

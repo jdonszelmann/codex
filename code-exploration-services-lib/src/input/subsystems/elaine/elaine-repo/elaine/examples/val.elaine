@@ -1,0 +1,18 @@
+use std;
+
+effect Val {
+    val() Int
+}
+
+let hVal = fn(x) {
+    handler {
+        return(x) { x }
+        val() { resume(x) }
+    }
+};
+
+let main = {
+    let a = handle[hVal(6)] add(val(), val());
+    let b = handle[hVal(10)] add(val(), val());
+    add(a, b)
+};

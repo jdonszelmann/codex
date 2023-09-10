@@ -1,0 +1,48 @@
+\documentclass[twoside,a4paper,11pt]{memoir}
+% Fix: From https://tex.stackexchange.com/a/508995/108670
+\RequirePackage{snapshot}
+\makeatletter
+\def\snap@providesfile#1[#2]{%
+  \wlog{File: #1 #2}%
+  \if\expandafter\snap@graphic@test\expanded{#2}@@\@nil
+    \snap@record@graphic#1\relax #2 (type ??)\@nil
+  \else
+    \expandafter\xdef\csname ver@#1\endcsname{#2}%
+  \fi
+  \endgroup
+}
+\makeatother
+
+\usepackage{document}
+
+\addbibresource{bibliography.bib}
+
+\input{chapters/metadata.tex}
+
+\begin{document}
+\frontmatter
+\thispagestyle{empty}
+\maketitle
+\makeformaltitlepages{\input{chapters/abstract.tex}}
+\include{chapters/preface.tex}
+
+\cleardoublepage\tableofcontents
+% \cleardoublepage\listoffigures
+% \cleardoublepage\listoftables
+\cleardoublepage\mainmatter{}
+
+\include{chapters/introduction.tex}
+\include{chapters/background.tex}
+\include{chapters/related_work.tex}
+\include{chapters/basics.tex}
+\include{chapters/spec.tex}
+\include{chapters/elaboration_resolution.tex}
+\include{chapters/elaboration_compilation.tex}
+\include{chapters/conclusion.tex}
+
+\printbibliography
+
+\appendix
+\def\chaptername{Appendix}
+
+\end{document}

@@ -1,0 +1,34 @@
+use std;
+
+# type Ref[a] = fn(a) b
+
+effect SubJump {
+    # In this encoding:
+    #  - Calls the function (usually the continuation from subc)
+    #  - And does not resume
+    # ref a -> a -> m b
+    jump(fn(a) b, a) b
+
+    # Makes the second function available in the first
+    # (ref a -> b) -> (a -> m b) -> m b
+    subc(fn(fn(a) b) b, fn(a) b) b
+}
+
+let hSubJump = handler {
+    return(x) { x }
+    jump(f, x) { f(x) }
+    subc(f, k) { resume(f(k)) }
+};
+
+let jumped = fn(x) { concat("jumped with ", x) };
+
+let main = {
+    let a = handle[hSubJump] subc(fn(f) {
+        jump(f, "b");
+        "c"
+    }, jumped);
+    let b = handle [hSubJump] subc(fn(f) {
+        "c"
+    }, jumped);
+    concat(concat(a, "\n"), b)
+};

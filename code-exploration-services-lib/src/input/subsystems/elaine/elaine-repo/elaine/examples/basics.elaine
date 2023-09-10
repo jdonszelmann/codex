@@ -1,0 +1,7 @@
+use std;
+
+let timesTwo = fn(x) {
+    add(x, x)
+};
+
+let main = timesTwo(timesTwo(2));

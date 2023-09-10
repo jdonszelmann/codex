@@ -1,0 +1,67 @@
+%%% Imports %%%
+\usepackage[utf8]{inputenc}
+
+% Bibliography
+\usepackage[firstinits=true, backend=biber, useprefix=true]{biblatex}
+
+% Mathematical
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{thmtools} % correct autorefnames with shared theorem counter
+\usepackage{mathtools}
+\usepackage{physics}
+\usepackage{stmaryrd} % \llbracket, \rrbracket, \llparenthesis & \rrparenthesis
+\usepackage{cmap} % makes mathematical symbols searchable
+\usepackage{listings}
+
+% Hyperref
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+\usepackage[capitalise, noabbrev, nameinlink]{cleveref}
+
+% Todonotes
+\usepackage[colorinlistoftodos]{todonotes}
+
+\addbibresource{bibliography.bib}
+
+% url commands
+\newcommand\email[1]{
+    \href{mailto:#1}{\url{#1}}
+}
+
+\newcommand\lib[2]{
+    \href{#2}{\texttt{#1}}\footnote{\url{#2}}
+}
+
+\providecommand\given{}
+% can be useful to refer to this outside \Set
+\newcommand\SetSymbol[1][]{%
+  \nonscript\:#1\vert
+  \allowbreak
+  \nonscript\:
+  \mathopen{}}
+\DeclarePairedDelimiterX\Set[1]\{\}{%
+  \renewcommand\given{\;\SetSymbol[\delimsize]\;}
+  #1
+}
+
+\DeclarePairedDelimiter\Tuple()
+
+\renewcommand\S{\Set*}
+\newcommand\T{\Tuple*}
+
+\definecolor{background}{rgb}{0.96,0.97,0.98}
+\definecolor{gray}{rgb}{0.6,0.6,0.6}
+\definecolor{darkgray}{rgb}{0.4,0.4,0.4}
+\lstdefinelanguage{elaine}{
+    morekeywords={fn,let,handle,handler,elab,elaboration,true,false,effect,type,pub,mod,if,then,else,return}
+}
+\lstset{
+    mathescape,,
+    basicstyle=\rmfamily\itshape,
+    keywordstyle=\bfseries\upshape,
+    columns=fullflexible,
+    literate={
+        {lambda}{$\lambda$}{1}
+    },
+    language=elaine
+}

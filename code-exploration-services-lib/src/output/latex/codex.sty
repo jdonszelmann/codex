@@ -1,0 +1,46 @@
+% codex support package
+%
+% (c) Buffalo Bill
+%
+%% This program can be redistributed and/or modified under the terms
+%% of the LaTeX Project Public License Distributed from CTAN archives
+%% in directory macros/latex/base/lppl.txt.
+
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{codex}
+[2023/05/30 v0.01 LaTeX package for rich code exploration]
+
+\RequirePackage{xcolor}
+\RequirePackage{hyperref}
+\RequirePackage[most]{tcolorbox}
+
+\newcommand{\linkdest}[1]{\Hy@raisedlink{\hypertarget{#1}{}}}
+\newcommand\outlineentry[1]{%
+    \refstepcounter{subsubsection}%
+    \addcontentsline{toc}{subsubsection}{\protect\numberline{\thesubsubsection}#1}%
+    \sectionmark{#1}}
+
+\newenvironment{codexcode}{
+    \begin{tcolorbox}[%
+        enhanced,
+        breakable,
+        skin first=enhanced,
+        skin middle=enhanced,
+        skin last=enhanced,
+        colback=vbackground
+    ]{}
+        \hypersetup{
+            linkbordercolor=vbackground
+        }
+
+        \ttfamily
+        \verbatim@font
+        \setlength{\parindent}{0pt}
+} {
+    \end{tcolorbox}
+}
+
+\endinput
+%%
+%% End of file `codex.sty'.
+

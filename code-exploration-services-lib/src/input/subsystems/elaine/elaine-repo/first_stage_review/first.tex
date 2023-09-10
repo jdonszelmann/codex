@@ -1,0 +1,149 @@
+\documentclass{article}
+\input{preamble.tex}
+
+\title{Compiling Elaborations of Higher-Order Effects\\First-Stage Review}
+\author{Terts Diepraam}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+This document explains the current progress on my thesis project. It starts by establishing the research gap. Then gives the goals for the project, the current progress and the plans to the remainder of the project.
+
+\section{Previous Research}
+
+In standard $\lambda$-calculus, there is no model for effects of the computation, only of the result. Speaking broadly, effects concern the aspects of the program besides the pure computation. \cite{moggi_computational_1989}
+
+In their seminal paper, \textcite{moggi_computational_1989} unified monads with computational effects, or notions of computation as they call it. Functional programming languages often rely on monads to perform effectful computations. Haskell, for example, uses an \texttt{IO} monad for printing output and reading input. The computation is then kept pure and impure operations (like reading and printing) are delegated to the system. However, a limitation of treating effects as monads is that monads do not compose well.
+
+\textcite{goos_adequacy_2001} then showed that effects can be represented as equational theories. The effects that can be represented in this framework are called algebraic effects. The \texttt{State} and the \texttt{Maybe} monads can for example be expressed in this framework.
+
+\textcite{castagna_handlers_2009} then introduced effect handlers, allowing the programmer to destruct effects by placing handlers around effectful expressions. This provides a way to treat exception handling using effects. However, the scope in which an effect is handled can only be changed by adding handlers. Effect operations cannot define their own scope. To support this, a system for higher-order effects is required, which are effects that take effectful operations as parameters.
+
+A solution to this was the framework of scoped effects \cite{wu_effect_2014}. However, scoped effects require a significant increase in complexity and cannot express effects that are neither algebraic nor scoped, such as lambda abstractions \cite{oh_latent_2021}. Latent effects \cite{oh_latent_2021} were subsequently introduced as an alternative that encapsulates a larger set of effects.
+
+As an alternative approach to latent effects, \textcite{bach_poulsen_hefty_2023} introduced hefty algebras. With hefty algebras, higher-order effects are treated separately from algebraic effects. Higher-order effects are not handled, but elaborated into algebraic effects, which can then be handled. The advantage is that the treatment of algebraic effects remains intact and that the process of elaboration is relatively simple.
+
+In parallel with the work to define theoretical frameworks for effects, several libraries and languages have been designed that include effects as first-class concepts, allowing the programmer to define their own effects and handlers. For example, there are some libraries available for Haskell, like \lib{fused-effects}{https://github.com/fused-effects/fused-effects}, \lib{polysemy}{https://github.com/polysemy-research/polysemy}, \lib{freer-simple}{https://github.com/lexi-lambda/freer-simple} and \lib{eff}{https://github.com/hasura/eff}, each encoding effects in a slightly different way.
+
+Notable examples of languages with support for algebraic effects are Eff \cite{bauer_programming_2015}, Koka \cite{leijen_koka_2014} and Frank \cite{lindley_be_2017}. OCaml also gained support for effects \cite{sivaramakrishnan_retrofitting_2021}. By building algebraic effects into the language, instead of delegating to a library, is advantageous because the language can provide more convenient syntax. In these languages, some concepts that were traditionally only available with language support, can be expressed by the programmer. This includes exception handling and asynchronous programming.
+
+These languages either only support algebraic effects or scoped effects. This means that their support for higher-order effects is limited. The exception is \lib{heft}{https://github.com/heft-lang/heft}, which is produced in conjunction with the work in \cite{bach_poulsen_hefty_2023}.
+
+\section{Goals of the Project}
+
+The main research question for this project is: \textbf{``Can we transform a program with elaborations and higher-order effects to a program with algebraic effects?''} If such a transformation exists, we aim to answer further questions, such as:
+\begin{itemize}
+\item Can this transformation be incremental?
+\item Can we transform the program without type information?
+\item Does this transformation apply to existing languages with algebraic effects?
+\item Can we apply the transformation to libraries for algebraic effects in languages that do not have first-class support for algebraic effects?
+\end{itemize}
+
+If we cannot find such a transformation, we can ask what limitations we can impose such that we can find a suitable transformation. For example, it might be possible that elaborations must be known statically to be able to compile them.
+
+In addition, we explore whether we can infer which elaborations to apply based on the context, removing the need to explicitly specify the elaborations. Furthermore, we explore whether it is possible (or even desirable) to do similar inference for handlers of algebraic effects.
+
+To this end, we create a new language called \texttt{elaine}\footnote{A name which was chosen because it shares a prefix with ``elaboration'', which is an integral part of the language.}, building on the work in \cite{bach_poulsen_hefty_2023}, which
+\begin{itemize}
+    \item supports higher-order effects using hefty algebras, with separate elaborations and handlers,
+    \item implicitly resolves elaborations, and
+    \item can be compiled to a representation with only algebraic effects.
+\end{itemize}
+
+To answer the research question, we need to show that the compilation of higher-order effects we define is equivalent to the operational semantics for elaborations.
+
+By showing that elaborations can be removed at compile-time, we are able to connect the theory of hefty algebras more tightly with the literature on algebraic effects. For example, we show that it is possible to compile programs in our language using the techniques from \cite{leijen_type_2017} and we provide an easy mechanism to add support for higher-order effects to languages with support for algebraic effects.
+
+Finally, we aim to provide an implementation of \lib{elaine}{https://github.com/tertsdiepraam/thesis/tree/main/elaine}. The implementation allows for experimentation with the techniques from the thesis and it gives us the opportunity to write and test more complex programs.
+
+\section{Current State of the Project}
+
+We have specified the elaine language by defining a syntax, typing judgments, implicit resolution of elaborations and operational semantics.
+
+The implicit elaborations are resolved by looking up the elaborations in the current context. If there are multiple elaborations for a higher-order effect in the context, we have a type error. We have not explored the same mechanism for handlers yet. The current hypothesis is inference for handlers is not desirable, because handlers often require parameters, though it could be a nice feature to have for the sake of symmetry between handlers and elaborations.
+
+First, there are a couple of failed attempts at defining the transformation. While these are not useful themselves, they yielded some interesting edge cases of programs for which the transformation is difficult.
+
+In the process, we found a type system that (with some overapproximation) gives us information about which \lstinline|handle| and \lstinline|elab| constructs apply to which operations in the syntax tree. While this is not used in the current definition of the transformation, it might give us information that might be used for more optimized compilation.
+
+The first difficult example is a program in which an effectful lambda is applied, which shows that we cannot simply replace occurrences of $a!$ within any given \lstinline|elab|, because the operation might be in other parts of the syntax tree.
+
+\begin{lstlisting}
+let f = lambda x . elab[e] { x () }
+f(lambda x . a!())
+\end{lstlisting}
+
+The second difficult case is a program in which multiple \lstinline|elab|s might apply, depending on some runtime value. In the example below, if the runtime condition evaluates to \lstinline|true| then $e1$ is applied, but $e2$ is applied if not.
+
+\begin{lstlisting}
+let f = lambda x . {
+    let _ = a!()
+    ()
+}
+elab[e1] {
+    let g = elab[e2] {
+        if <runtime condition> then
+            f
+        else {
+            f()
+            lambda x . ()
+        }
+    }
+    g()
+}
+\end{lstlisting}
+
+However, we can still define a surprisingly simple transformation that works in all of these cases. First, we make all elaborations explicit, that is, we transform each ``\lstinline|elab {e}|'' to ``\lstinline|elab[$E_1$] {elab[$E_2$] {... elab[$E_n$] {e} ...}}|''. Now that we have an elab for each effect. Without loss of generality, consider only one effect $A!$ with operations $op_1!,\dots,op_m!$. In the whole program there is a finite list of elaborations $E^A_1,\dots,E^A_n$ for $A!$. Let $E^A_i[op_j!(x_1,\dots,x_k)]$ denote the elaboration of $op_j!(x_1,\dots,x_k)$ as defined by $E_i$. The transformation is then defined as a fold over the syntax tree which is the identity except in the following cases:
+\\\\
+\begin{tabular}{rcl}
+\lstinline|elab[$E^A_i$] {e}|
+& $\implies$
+& \lstinline|handle $H_A$(i) {e}|
+\\\\
+\lstinline|$op_j$!($x_1,...,x_k$)|
+& $\implies$
+& \begin{lstlisting}
+{
+    let i = $askElab_A$()
+    if eq(i, 1) then $E^A_1[op_j!(x_1,\dots,x_k)]$
+    else if eq(i, 2) then $E^A_2[op_j!(x_1,\dots,x_k)]$
+    ...
+    else if eq(i, N-1) then $E^A_{N-1}[op_j!(x_1,\dots,x_k)]$
+    else $E^A_{N}[op_j!(x_1,\dots,x_k)]$
+}
+\end{lstlisting} \\
+\end{tabular}
+\\\\
+The function $H_A$ returns a handler for the effect with the operation $askElab_A$ defined as
+
+\begin{lstlisting}
+let $H_A$ = lambda i . handler {
+    return(x) { x }
+    $askElab_A$() { resume(i) }
+}
+\end{lstlisting}
+
+The effect in this transformation is meant to evoke the \texttt{Reader} effect, where the $askElab_A$ operation ``asks'' which elaboration is active in a given scope. This transformation works because of the similarities between the semantics of handlers and elaborations.
+
+The transformation has several nice properties. Apart from finding all relevant  elaborations, it is entirely local, making it easy to reason about and implement. It is also consistent across the entire program: every operation in the program and every elaboration is expanded in the same way. As long as no elaborations are added or removed from the program, it is also incremental, meaning that previously transformed parts of the program can be cached. With some further research, we might be able to make it fully incremental, though this is non-trivial. Using the type inference, we might also be able to simplify the transformation in some cases. For example, in the cases where only one elaboration might apply to a given operation, we can remove the handler and the if-expression and replace the operation directly with the elaboration.
+
+We have a parser and interpreter implementing most of what is described above, though resolution of implicit elaborations is still missing. The compilation of higher-order effects also has not been implemented. There is a test suite with implementations of common (higher-order) effects, though this list has to be expanded.
+
+\section{Plan for the Remainder of the Project}
+
+A few small changes should be still made to the specification of the language. Most importantly, elaborations should become first-class values, just like handlers. This means that there will be two \lstinline|elab| constructs: an explicit \lstinline|elab| and an implicit \lstinline|elab|. The explicit elab (tentatively written \lstinline{elab[e]}) has a sub-expression that evaluates to the elaboration. The implicit elab infers the correct elaborations from the values in scope. Another difference between the two is that the implicit elab can elaborate multiple effects, where the explicit elab can elaborate just one. This is not a fundamental limitation, but is just for practical reasons since the language lacks support for tuples and hence a set of multiple elaborations is difficult to represent.
+
+We can then extend the compilation to programs in which elaborations are first-class values. This is probably quite simple, as it just adds a case to the transformation for an elaboration, while keeping the same general idea.
+
+Once that is done, the interpreter needs to be updated to follow that new specification. Then we can implement the compilation of higher-order effects and test that. The test suite and an informal proof will comprise a convincing argument about the correctness of the transformation.
+
+The test suite also needs to be expanded significantly. We need both more examples of practical effects and examples of edge cases like the ones described in the previous section.
+
+If there is time left to extend the language, we can attempt to write a type checker. However, since the type information has little to do with the compilation or the inference of implicit elaborations, a type checker has a low priority. We can also provide a more extensive set of primitives (e.g. floating point numbers, lists \& tuples) and define system handlers of effects which are implemented by the runtime. For example, we can define a handler for the \texttt{Writer} effect which writes directly to \texttt{stdout}. While these extensions are not necessary or theoretically very interesting, they do allow us to write more interesting example programs.
+
+\printbibliography
+
+\end{document}

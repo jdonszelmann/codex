@@ -1,0 +1,424 @@
+\chapter{Elaine Specification}\label{chap:spec}
+\TODO{This needs to become more of a story. Maybe it should be integrated with the previous chapter?}
+
+\section{Syntax definition}
+\begin{align*}
+    \text{program}\;p
+        \IS & m \dots m\\
+    \text{module}\;m
+        \IS & \kw{mod}\;x\;\{ d \dots d \}\\
+    \\
+    \text{declaration}\;d
+        \IS & \kw{pub}\;d' \OR d'\\
+    d'  \IS & \kw{let}\;x = e;\\
+        \OR & \import\;x;\\
+        \OR & \effect\;\phi\;\{s, \dots, s\}\\
+        \OR & \type\;x\;\{s, \dots, s\}
+    \\
+    \text{expression}\;e
+        \IS & x\\
+        \OR & () \OR \true \OR \false \\
+        \OR & \fn(x: T, \dots, x: T)\;T\;\S{e} \\
+        \OR & \cond{e}{e}{e}\\
+        \OR & e(e,\dots, e) \\
+        \OR & x!(e, \dots, e) \\
+        \OR & \kw{handler}\;\{return(x) \S{e}, o, \dots, o \}\\
+        \OR & \kw{handle}[e]\;e \\
+        \OR & \kw{elaboration}\;x! \to \Delta \;\{o, \dots, o\}\\
+        \OR & \kw{elab}[e]\;e\\
+        \OR & \kw{elab}\;e \\
+        \OR & \kw{let}\;x = e;\;e\\
+        \OR & e;\;e\\
+        \OR & \{ e \}\\
+    \\
+    \text{signature}\;s
+        \IS & x (T, \dots, T)\;T\\
+    \text{effect clause}\;o
+        \IS & x(x, \dots, x)\;\S{ e }\\
+    \\
+    \text{type scheme}\;\sigma
+        \IS & T \OR \forall \alpha.\sigma\\
+    \text{type}\; T
+        \IS & \Delta\;\tau \\
+    \text{value type}\;\tau
+        \IS & x 
+        \OR ()
+        \OR \Bool \\
+        \OR & (T,\dots, T) \to T \\
+        \OR & \kw{handler}\;x\;\tau\;\tau \\
+        \OR & \kw{elaboration}\;x!\;\Delta \\
+    \text{effect row}\;\Delta
+        \IS & \row{} \OR  x \OR \row{\phi|\Delta}\\
+    \text{effect}\;\phi \IS & x \OR x!
+\end{align*}
+
+\section{Typing judgments}
+
+The context $\Gamma = (\Gamma_M, \Gamma_V, \Gamma_E, \Gamma_\Phi)$ consists of the following parts:
+\begin{align*}
+    \Gamma_M &: x \to (\Gamma_V, \Gamma_E, \Gamma_\Phi) & \text{module to context}\\
+    \Gamma_V &: x \to \sigma & \text{variable to type scheme}\\
+    \Gamma_E &: x \to (\Delta, \S{f_1, \dots, f_n}) & \text{higher-order effect to elaboration type}\\
+    \Gamma_\Phi &: x \to \S{s_1,\dots,s_n} & \text{effect to operation signatures}
+\end{align*}
+
+\info{A $\Gamma_T$ for data types might be added.}
+
+Whenever one of these is extended, the others are implicitly passed on too, but when declared separately, they not implicitly passed. For example, $\Gamma''$ is empty except for the single $x: T$, whereas $\Gamma'$ implicitly contains $\Gamma_M$, $\Gamma_E$ \& $\Gamma_\Phi$.
+\[ \Gamma'_V = \Gamma_V, x: T \qquad \Gamma''_V = x: T \]
+
+If the following invariants are violated there should be a type error:
+
+\begin{itemize}
+    \item The operations of all effects in scope must be disjoint.
+    \item Module names are unique in every scope.
+    \item Effect names are unique in every scope.
+\end{itemize}
+
+\subsection{Type Checker}\label{sec:typechecker}
+
+\subsection{Unification of Effect Rows}
+\TODO{Talk about \autocite{leijen_extensible_2005,leijen_koka_2014}.}
+
+During type checking effect rows are represented as a pair consisting of a multiset of effects and an optional extension variable. In this section we will use a more explicit notation than the syntax of Elaine by using the multiset representation directly. Hence, a row $\row{A_1,\dots,A_n|e_A}$ is represented as the multiset $\{A_1,\dots,A_n\} + e_A$.
+
+Like with regular Hindley-Milner type inference, two rows can be unified if we can find a substitution of effect row variables that make the rows equal. For effect rows, this yields 3 distinct cases.
+
+If both rows are closed (i.e. have no extension variable) there are no variables to be substituted and we just employ multiset equality. That is, to unify rows $A$ and $B$ we check that $A = B$. If that is true, we do not need to unify further and unification has succeeded. Otherwise, we cannot make any substitutions to make them equal and unification has failed.
+
+If one of the rows is open, then the set of effects in that row need to be a subset of the effects in the other row. To unify the rows
+\[ A + e_A \quad\text{and}\quad B \]
+we assert that $A \subseteq B$. If that is true, we can substitute $e_n$ for the effects in $B - A$.
+
+Finally, there is the case where both rows are open:
+\[ A + e_A \quad\text{and}\quad B + e_B. \]
+In this case, unification is always possible, because both rows can be extended with the effects of the other. We create a fresh effect row variable $e_C$ with the following substitutions:
+\begin{align*}
+    e_A &\to (B - A) + e_C \\
+    e_B &\to (A - B) + e_C.
+\end{align*}
+In other words, $A$ is extended with the effects that are in $B$ but not in $A$ and similarly, $B$ is extended with the effects in $A$ but not in $A$.
+
+\subsection{Effect row semantics}
+
+We treat effect rows as multisets. That means that the row $\row{A, B, B, C}$ is simply the multiset $\S{A, B, B, C}$. The $|$ symbol signifies extension of the effect row with another (possibly arbitrary) effect row. The order of the effects is insignificant, though the multiplicity is. We define the operation $\set$ as follows:
+\begin{align*}
+    \set(\varepsilon) = \set(\row{}) &= \emptyset\\
+    \set(\row{A_1, \dots, A_n}) &= \S{A_1, \dots, A_n}\\
+    \set(\row{A_1, \dots, A_n|R}) &= \set(\row{A_1, \dots, A_n}) + \set(R).
+\end{align*}
+
+Note that the extension uses the sum, not the union of the two sets. This means that $\set(\row{A | \row{A}})$ should yield $\S{A, A}$ instead of $\S{A}$.
+
+Then we get the following equality relation between effect rows $A$ and $B$:
+\[ A \cong B \iff \set(A) = \set(B). \]
+In typing judgments, the effect row is an overapproximation of the effects that actually used by the expression. We freely use set operations in the typing judgments, implicitly calling the the $\set$ function on the operands where required. An omitted effect row is treated as an empty effect row ($\row{}$).
+
+Any effect prefixed with a $!$ is a higher-order effect, which must elaborated instead of handled. Due to this distinction, we define the operations $H(R)$ and $A(R)$ representing the higher-order and first-order subsets of the effect rows, respectively. The same operators are applied as predicates on individual effects, so the operations on rows are defined as:
+\[ 
+    H(\Delta) = \S{ \phi \in \Delta \given H(\phi) }
+    \qquad
+    \text{and}
+    \qquad
+    A(\Delta) = \S{ \phi \in \Delta \given A(\phi) }.
+\]
+
+\subsection{Type inference}
+
+We have the usual generalize and instantiate rules. But, the generalize rule requires an empty effect row.
+
+\question{Koka requires an empty effect row. Why?}
+
+\begin{gather*}
+    \infer{
+        \Gamma \vdash e : \forall \alpha. \sigma
+    }{
+        \Gamma \vdash e : \sigma
+        \qquad
+        \alpha \not\in \ftv(\Gamma)
+    }
+    \qquad
+    \infer{
+        \Gamma \vdash e : \sigma[\alpha \mapsto T']
+    }{
+        \Gamma \vdash e : \forall \alpha. \sigma
+    }
+\end{gather*}
+
+Where $\ftv$ refers to the free type variables in the context.
+
+\subsection{Expressions}
+We freely write $\tau$ to mean that a type has an empty effect row. That is, we use $\tau$ and a shorthand for $\row{}\;\tau$. The $\Delta$ stands for an arbitrary effect row. We start with everything but the handlers and elaborations and put them in a separate section.
+\begin{gather*}
+    \infer{
+        \Gamma \vdash x : \Delta\;\tau
+    }{
+        \Gamma_V(x) = \Delta\;\tau
+    }
+    \qquad
+    \infer{
+        \Gamma \vdash \S{e} : \Delta\;\tau
+    }{
+        \Gamma \vdash e : \Delta\;\tau
+    }
+    \qquad
+    \infer{
+        \Gamma \vdash \kw{let}\;x = e_1; e_2 : \Delta\;\tau'
+    }{
+        \Gamma \vdash e_1 : \Delta\;\tau
+        \qquad
+        \Gamma_V, x: \tau \vdash e_2 : \Delta\;\tau'
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \unit: \Delta\;\unit
+    }{}
+    \qquad
+    \infer{\Gamma \vdash \true : \Delta\;\Bool}{}
+    \qquad
+    \infer{\Gamma \vdash \false : \Delta\;\Bool}{}
+    \\\\
+    \infer{
+        \Gamma \vdash \fn(x_1: T_1,\dots,x_n: T_n)\;T\; \{e\}: \Delta\;(T_1,\dots, T_n) \to T
+    }{
+        \Gamma_V, x_1: T_1, \dots, x_n: T_n \vdash c : T
+        \qquad
+        T_i = \row{} \tau_i
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \cond{e_1}{e_2}{e_3} : \Delta\;\tau
+    }{
+        \Gamma \vdash e_1 : \Delta\;\Bool
+        \qquad
+        \Gamma \vdash e_2 : \Delta\;\tau
+        \qquad
+        \Gamma \vdash e_3 : \Delta\;\tau
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash e(e_1, \dots, e_n): \Delta\;\tau
+    }{
+        \Gamma \vdash e: (\tau_1, \dots, \tau_n) \to \Delta\;\tau
+        \qquad
+        \Gamma \vdash e_i : \Delta\;\tau_i
+    }
+\end{gather*}
+
+\subsection{Declarations and Modules}
+
+The modules are gathered into $\Gamma_M$ and the variables that are in scope are gathered in $\Gamma_V$. Each module has a the type of its public declarations. Note that these are not accumulative; they only contain the bindings generated by that declaration. Each declaration has the type of both private and public bindings. Without modifier, the public declarations are empty, but with the \kw{pub} keyword, the private bindings are copied into the public declarations. 
+
+\begin{gather*}
+    \infer{
+        \Gamma_0 \vdash m_1\dots m_n: ()
+    }{
+        \Gamma_{i-1} \vdash m_i: \Gamma_{m_i}
+        \qquad
+        \Gamma_{M,i} = \Gamma_{M,i-1}, \Gamma_{m_i}
+    }
+    \\\\
+    % module
+    \infer{
+        \Gamma_0 \vdash \kw{mod}\;x\;\S{ d_1 \dots d_n }: (x: \Gamma)
+    }{
+        \Gamma_{i-1} \vdash d_i : (\Gamma'_i; \Gamma'_{\text{pub}, i})
+        \qquad
+        \Gamma_i = \Gamma_{i-1}, \Gamma'_i
+        \qquad
+        \Gamma \vdash \Gamma'_{\text{pub},1}, \dots, \Gamma'_{\text{pub},n}
+    }
+    \\\\
+    % private declaration
+    \infer{
+        \Gamma \vdash d : (\Gamma'; \varepsilon)
+    }{
+        \Gamma \vdash d : \Gamma'
+    }
+    \qquad
+    % public declaration
+    \infer{
+        \Gamma \vdash \kw{pub}\;d : (\Gamma'; \Gamma')
+    }{
+        \Gamma \vdash d : \Gamma'
+    }
+    \qquad
+    % Import
+    \infer{
+        \Gamma \vdash \import\;x : \Gamma_M(x)
+    }{}
+    \\\\
+    % Type declaration
+    \infer{
+        \Gamma \vdash \type\;x \;
+        \{ x_1(\tau_{1,1}, \dots, \tau_{1,n_1}), \dots, x_m(\tau_{m,1}, \dots, \tau_{m,n_m}) \} : \Gamma'
+    }{
+        f_i = \forall \alpha. (\tau_{i,1}, \dots, \tau_{i,n_i}) \to \alpha\;x
+        \\
+        \Gamma'_V = x_1: f_1,\dots,x_m: f_m
+    }
+    \\\\
+    % Global value
+    \infer{
+        \Gamma \vdash \kw{let}\;x = e : (x: T)
+    }{
+        \Gamma \vdash e : T
+    }
+\end{gather*}
+
+\subsection{First-Order Effects and Handlers}
+Effects are declared with the \kw{effect} keyword. The signatures of the operations are stored in $\Gamma_\Phi$. The types of the arguments and resumption must all have no effects.
+
+A handler must have operations of the same signatures as one of the effects in the context. The names must match up, as well as the number of arguments and the return type of the expression, given the types of the arguments and the resumption. The handler type then includes the handled effect $\phi$, an ``input'' type $\tau$ and an ``output'' type $\tau'$. In most cases, these will be at least partially generic.
+
+The handle expression will simply add the handled effect to the effect row of the inner expression and use the the input and output type.
+
+\begin{gather*}
+    % first-order (algebraic) effect
+    \infer{
+        \Gamma \vdash \kw{effect}\;x\;\S{s_1, \dots, s_n}: \Gamma'
+    }{
+        s_i = op_i(\tau_{i,1},\dots, \tau_{i,n_i}): \tau_i
+        \qquad
+        \Gamma'_\Phi(x) = \S{s_1, \dots, s_n}
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \handle\;e_h\;e_c : \Delta\;\tau'
+    }{
+        \Gamma \vdash e_h : \handler\;\phi\;\tau\;\tau'
+        \qquad
+        \Gamma \vdash e_c : \row{\phi | \Delta}\;\tau
+    }
+    \\\\
+    \infer{
+        \Gamma \vdash \handler\;\S{ \return(x) \S{ e_{\text{ret}} }, o_1, \dots, o_n }
+        : \handler\;\phi\;\tau\;\tau'
+    }{
+        A(\phi)
+        \qquad
+        \Gamma_\Phi(\phi) = \S{ s_1, \dots, s_n }
+        \qquad
+        \Gamma, x: \tau \vdash e_{\text{ret}} : \tau' 
+        \\
+        \left[
+            \begin{gathered}
+                s_i = x_i(\tau_{i,1}, \dots, \tau_{i,m_i}) \to \tau_i
+                \qquad
+                o_i = x_i(x_{i,1}, \dots, x_{i,m_i})\;\S{ e_i }
+                \\
+                \Gamma_V, resume : (\tau_i) \to \tau', x_{i,1}: \tau_{i,1}, \dots, x_{i,i_m}: \tau_{i,i_m} 
+                \vdash e_i: \tau'
+            \end{gathered}
+        \right]_{1\leq i\leq n}
+    }
+\end{gather*}
+
+\subsection{Higher-Order Effects and Elaborations}
+
+The declaration of higher-order effects is similar to first-order effects, but with exclamation marks after the effect name and all operations. This will help distinguish them from first-order effects.
+
+Elaborations are of course similar to handlers, but we explicitly state the higher-order effect $x!$ they elaborate and which first-order effects $\Delta$ they elaborate into. The operations do not get a continuation, so the type checking is a bit different there. As arguments they take the effectless types they specified along with the effect row $\Delta$. Elaborations are not added to the value context, but to a special elaboration context mapping the effect identifier to the row of effects to elaborate into.
+\\
+\info{Later, we could add more precise syntax for which effects need to be present in the arguments of the elaboration operations.}
+
+The \el{elab} expression then checks that a elaboration for all higher-order effects in the inner expression are in scope and that all effects they elaborate into are handled.
+\\
+\info{It is not possible to elaborate only some of the higher-order effects. We could change the behaviour to allow this later.}
+
+\begin{gather*}
+    % higher-order effect
+    \infer{
+        \Gamma \vdash \kw{effect}\;x!\;\S{s_1, \dots, s_n}: \Gamma'
+    }{
+        s_i = op_i!(\tau_{i,1}, \dots, \tau_{i,n_i}): \tau_i
+        \qquad
+        \Gamma'_\Phi(x!) = \S{s_1, \dots, s_n}
+    }
+    \\\\
+    % Elaboration
+    \infer{
+        \Gamma \vdash \elaboration\;x! \to \Delta\;\S{o_1, \dots, o_n} : \Gamma'
+    }{
+        \Gamma_\Phi(x!) = \S{s_1, \dots, s_n}
+        \qquad
+        \Gamma'_E(x!) = \Delta
+        \\
+        \left[
+            \begin{gathered}
+                s_i = x_i!(\tau_{i,1}, \dots, \tau_{i,m_i})\;\tau_i \qquad o_i = x_i!(x_{i,1}, \dots, x_{i,m_i}) \S{ e_i }
+                \\
+                \Gamma,x_{i,1}: \Delta\;\tau_{i,1},\dots,x_{i,n_i}: \Delta\;\tau_{i,n_i} \vdash 
+                e_i : \Delta\;\tau_i
+            \end{gathered}
+        \right]_{1\leq i \leq n}
+            }
+    \\\\
+    % Elab
+    \infer{
+        \Gamma \vdash \elab\;e : \Delta\;\tau
+    }{
+        \big[
+            \Gamma_E(\phi) \subseteq \Delta
+        \big]_{\phi \in H(\Delta')}
+        \qquad
+        \Gamma \vdash e : \Delta'\;\tau
+        \qquad
+        \Delta = A(\Delta')
+    }
+    \\\\
+\end{gather*}
+
+\section{Desugaring}
+Fold over the syntax tree with the following operation:
+
+\begin{align*}
+    D(\fn(x_1: T_1, \dots, x_n: T_n)\;T\;\{e\}) &= \lambda x_1,\dots,x_n . e \\
+    D(\kw{let}\;x = e_1;\;e_2) &= (\lambda x . e_2)(e_1)\\
+    D(e_1; e_2) &= (\lambda \_ . e_2)(e_1)\\
+    D(\S{e}) &= e\\
+    D(e) &= e
+\end{align*}
+
+\section{Elaboration resolution}
+
+\section{Semantics}
+\subsection{Reduction contexts}
+
+\begin{align*}
+    E
+        \IS & [] \OR E(e_1,\dots, e_n) \OR v(v_1,\dots,v_n,E,e_1,\dots,e_m) \\
+        \OR & \cond{E}{e}{e} \\
+        \OR & \kw{let}\;x = E;\;e \OR E;\;e\\
+        \OR & \kw{handle}[E]\;e \OR \kw{handle}[v]\;E \\
+        \OR & \kw{elab}[E]\;e \OR \kw{elab}[v]\;E\\
+    \\
+    X_{op}
+        \IS & [] \OR X_{op}(e_1, \dots, e_n) \OR v(v_1, \dots, v_n, X_{op}, e_1, \dots, e_m) \\
+        \OR & \cond{X_{op}}{e_1}{e_2} \\
+        \OR & \kw{let}\;x = X_{op};\;e \OR X_{op};\;e \\
+        \OR & \kw{handle}[X_{op}]\;e \OR \kw{handle}[h]\;{X_{op}} \text{ if } op\not\in h \\
+        \OR & \elab[X_{op}]\;e \OR \kw{elab}[\epsilon]\;X_{op} \text{ if } op! \not\in e
+\end{align*}
+
+\subsection{Reduction rules}
+\newcommand{\reduce}{\quad\longrightarrow\quad}
+\begin{align*}
+    c(v_1, \dots, v_n) \reduce& \delta(c, v_1, \dots, v_n) \\
+    &\qquad\text{if } \delta(c, v_1, \dots, v_n) \text{ defined}\\
+    (\lambda x_1, \dots, x_n . e) (v_1, \dots, v_n) \reduce& e[x_1 \mapsto v_1, \dots, x_n \mapsto v_n] \\
+    \cond{\true}{e_1}{e_2} \reduce& e_1 \\
+    \cond{\false}{e_1}{e_2} \reduce& e_2 \\
+    \\
+    \kw{handle}[h]\;v \reduce& e[x\mapsto v] \\
+    &\qquad\text{where } \return(x) \S{ e } \in H\\
+    \kw{handle}[h]\;X_{op}[op(v_1, \dots, v_n)] \reduce& e[x_1\mapsto v_1, \dots, x_n\mapsto v_n, resume \mapsto k] \\
+    &\qquad \text{where } \begin{aligned}[t]
+        & op(x_1, \dots, x_n) \S{e} \in h\\
+        & k = \lam{y}{\kw{handle}[h]\;
+        X_{op}[y]}
+    \end{aligned}\\
+    \kw{elab}[\epsilon]\;v \reduce& v\\
+    \kw{elab}[\epsilon]\;X_{op!}[op!(e_1, \dots, e_n)] \reduce& \kw{elab}[\epsilon]\;X_{op!}[e[x_1 \mapsto e_1, \dots, x_n \mapsto e_n]] \\
+    &\qquad \text{where } op!(x_1, \dots, x_n) \S{e} \in \epsilon \\
+\end{align*}

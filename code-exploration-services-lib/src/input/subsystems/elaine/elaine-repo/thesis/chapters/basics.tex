@@ -1,0 +1,217 @@
+\chapter{A Tour of Elaine}\label{chap:basics}
+
+The language designed for this thesis is called ``Elaine". The distinguishing feature of this language is its support for higher-order effects via elaborations. As far as we know, it is the second language with support for elaborations, the first being Heft. Elaine adds two new features: implicit elaboration resolution and compilation of elaborations, which are explained in \cref{chap:elabres,chap:elabcomp}, respectively. Additionally, Elaine differs by not requiring monadic style programming for effectful computation. This makes Elaine a surprisingly expressive language given its simplicity.
+
+This chapter introduces Elaine with motivating examples for the design choices. The full specification is given in \cref{chap:spec}. More example programs are available online\footnote{\url{https://github.com/tertsdiepraam/thesis/tree/main/elaine/examples}}.
+
+\section{Basics}
+
+The design of Elaine is similar to Koka, with syntactical elements inspired by Rust. Apart from the elaborations and handlers, the language should not be particularly surprising; it has standard let bindings, if-else expressions, first-class functions, booleans, integers and strings.
+
+An Elaine program consists of a tree of modules. Top level declarations are part of the root module. The result of the program will be the value assigned to the \el{main} variable in the root module. A module is declared with \el{mod}, which takes a name and a block of declarations. Declarations can be marked as public with the \el{pub} keyword. A module's public declarations can be imported into another module with \el{use}.
+
+The built-in primitives are \el{Int}, \el{Bool}, \el{String} and the unit \el{()}. The \el{std} module provides functions for basic manipulation of these primitives (e.g. \el{mul}, \el{lt} and \el{sub}). Functions are defined with \el{fn}, followed by a list of arguments and a function body. Functions are called with parentheses.
+
+The type system features Hindley-Milner style type inference. Let bindings, function arguments and function return types can be given explicit types. By convention, we will write variables and modules in lowercase and capitalize types.
+
+The language does not support recursion or any other looping construct.
+
+Below is a program that prints whether the square of 4 is even or odd. 
+
+\begin{lstlisting}[language=elaine, style=fancy]
+# The standard library contains basic functions for manipulation
+# of integers, booleans and strings.
+use std;
+
+# Functions are created with `fn` and bound with `let`, just like
+# other values. The last expression in a function is returned.
+let square = fn(x: Int) Int {
+    mul(x, x)
+};
+
+let is_even = fn(x: Int) Bool {
+    eq(0, modulo(x, 2))
+};
+
+# Type annotations can be inferred:
+let square_is_even = fn(x) {
+    let result = is_even(square(x));
+    if result { "even" } else { "odd" }
+};
+
+let give_answer = fn(f, x) {
+	let prefix = concat(concat(s, " "), show_int(x));
+    let text = concat(prefix, " is ");
+    let answer = f(x);
+    concat(text, answer)
+};
+
+let main = give_answer(square_is_even, 4);
+\end{lstlisting}
+
+\section{Algebraic Effects}
+
+The programs in the previous section are all pure and contain no effects. Like the languages discussed in \cref{chap:related_work}, Elaine additionally has first class support for effects and effect handlers.
+
+An effect is declared with the \el{effect} keyword. An effect needs a name and a set of operations. Operations are the functions that are associated with the effect. They can have an arbitrary number of arguments and a return type. Only the signature of operations can be given in an effect declaration, the implementation must be provided via handlers (see \cref{sec:alghandlers}).
+
+\subsection{Effect Rows}
+
+\TODO{Contextual vs parametric effect rows (see effects as capabilities paper). The paper fails to really connect the two: contextual is just parametric with implicit variables. However, it might be more convenient. The main difference is in the interpretation of purity (real vs contextual). In general, I'd like to have a full section on effect row semantics. In the capabilities paper effect rows are sets, which makes it possible to do stuff like \autocite{leijen_extensible_2005}.}
+
+In Elaine, each type has an \emph{effect row}. In the previous examples, this effect row has been elided, but it is still inferred by the type checker. Effect rows specify the effects that need be handled to within the expression. For simple values, that effect row is empty, denoted \el{<>}. For example, an integer has type \el{<> Int}. Without row elision, the \el{square} function in the previous section could therefore have been written as
+
+\begin{lstlisting}[language=elaine, style=fancy]
+let square = fn(x: <> Int) <> Int {
+    mul(x, x)
+}
+\end{lstlisting}
+
+Simple effect rows consist of a list of effect names separated by commas. The return type of a function that returns an integer and uses effects "A" and "B" has type \el{<A,B> Int}. Important here is that this type is equivalent to \el{<B,A> Int}: the order of effects in effect rows is irrelevant. However, the multiplicity is important, that is,  the effect rows \el{<A,A>} and \el{<A>} are not equivalent. To capture the equivalence between effect rows, we therefore model them as multisets.
+
+Additionally, we can extend effect rows with other effect rows. In the syntax of the language, this is specified with the \el{|} at the end of the effect row: \el{<A,B|e>} means that the effect row contains \el{A}, \el{B} and some (possibly empty) other set of effects.
+
+We can use extensions to ensure equivalence between effect rows without specifying the full rows (which might depend on context). For example, the following function uses the \el{Abort} effect if the called function returns false, while retaining the effects of the wrapped function.
+
+\begin{lstlisting}[language=elaine, style=fancy]
+let abort_on_false = fn(f: fn() <|e> Bool) <Abort|e> () {
+    if f() { () } else { abort() }
+}
+\end{lstlisting}
+
+Effect rows need special treatment in the unification algorithm of the type checker, which is detailed in \cref{sec:typechecker}.
+
+\subsection{Effect Handlers}\label{sec:alghandlers}
+
+To define the implementation of an effect, one has to create a handler for said effect. Handlers are first-class values in Elaine and can be created with the \el{handler} keyword. They can then be applied to an expression with the \el{handle} keyword. When \el{handle} expressions are nested with handlers for the same effect, the innermost \el{handle} applies.
+
+For example, if we want to use an effect to provide an implicit value, we can make an effect \el{Val} and a corresponding handler, which \el{resume}s execution with some values. The \el{resume} function represents the continuation of the program after the operation. Since handlers are first-class values, we can return the handler from a function to simplify the code. This pattern is quite common to create dynamic handlers with small variations.
+
+\lstinputlisting[
+    language=elaine,
+    style=fancy,
+]{../../elaine/examples/val.elaine}
+
+The handlers we have introduced for \el{Val} all call the \el{resume} function, but that is not required. Conceptually, all effect operations are executed by the \el{handle}, hence, if we return from the operation, we return from the \el{handle}. A handler therefore has great control over control flow.
+
+The \el{Abort} effect uses this mechanism. It defines a single operation \el{abort}, which returns from the handler without resuming. To show the flexibility that the framework of algebraic effect handlers, provide we will demonstrate several possible handlers for \el{Abort}. The first ignores the result of the computation, but still halts execution.
+
+\lstinputlisting[language=elaine, style=fancy, firstline=6]{../../elaine/examples/abort.elaine}
+
+In the program above, \el{f} will not get called because \el{hAbort} does not call the continuation, but \el{g} will be called, because it is used outside of the \el{handle}.
+
+Alternatively, we can define a handler that defines a default value for failing expressions. In this example, the handler acts much like an exception handler.
+
+\lstinputlisting[language=elaine, style=fancy, firstline=7]{../../elaine/examples/safe_division.elaine}
+
+We can also map the \el{Abort} effect to the \el{Maybe} monad, which is the canonical implementation.
+
+\TODO{Even for small handlers I need custom data types}
+\begin{lstlisting}[language=elaine, style=fancy]
+let hAbort = handler Abort {
+    return(x) { Just(x) }
+    abort() { Nothing() }
+};
+\end{lstlisting}
+
+Finally, we can ignore \el{abort} calls if we are writing an application in which we always want to try to continue execution no matter what errors occur.\footnote{With a never type, an alternative definition of \el{Abort} is possible where this handler is not permitted by the type system. The signature of \el{abort} would then be \el{abort() !}, where \el{!} is the never type and then \el{resume} could not be called.}
+
+\begin{lstlisting}[language=elaine, style=fancy]
+let hAbort = handler Abort {
+    return(x) { x }
+    abort() { resume(()) }
+};
+\end{lstlisting}
+
+Just like we can ignore the continuation, we can also call it multiple times, which is useful for non-determinism and logic programming. \Cref{lst:sat} contains the full code for a (very naive) SAT solver in Elaine. We first define a \el{Yield} effect, so we can yield multiple values from the computation. We will use this to find all possible combinations of boolean inputs that satisfy our equation. The \el{Logic} effect has two operations. The \el{branch} operation will call the continuation twice; once with \el{false} and once \el{true}. With \el{fail}, we can indicate that a branch has failed. To find all solutions, we just \el{branch} on all inputs and \el{yield} when a correct solution has been found and \el{fail} when the equation is not satisfied. In \cref{lst:sat}, we check for solutions of the equation $\neg a \wedge b$.
+
+\lstinputlisting[
+    language=elaine,
+    style=fancy,
+    caption={A naive SAT solver in Elaine.},
+    captionpos=b,
+    float=p,
+    label={lst:sat}
+]{../../elaine/examples/logic.elaine}
+
+\section{Higher-Order Effects in Elaine}
+
+Higher-order effects in Elaine are supported via elaborations, as proposed by \textcite{bach_poulsen_hefty_2023}. To distinguish higher-order effects from algebraic effects, we write them with a \el{!} suffix. This syntax was chosen to be reminiscent of macros in Rust, since elaborations are syntactic substitutions and hence behave much like macros. However, it should be noted that they do not behave exactly the same.
+
+Just like algebraic effects have the \el{handler} and \el{handle} keywords, to create and apply handlers, higher-order effects have the \el{elaboration} and \el{elab} keyword.
+
+Elaborations do not get access to the \el{resume} function, because they always resume exactly once. Consider the effect \el{Val} and its elaborated counterpart \el{Val!}, which calls the continuation with a constant value. With a handler, we have to call \el{resume}, but we do not need to do that in an elaboration.
+
+\begin{minipage}[b]{0.5\textwidth}
+\begin{lstlisting}[language=elaine,style=fancy]
+handler {
+    val() { resume(5) }
+}
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}[b]{0.5\textwidth}
+\begin{lstlisting}[language=elaine,style=fancy]
+elaboration Val! -> <> {
+    val() { 5 }
+}
+\end{lstlisting}
+\end{minipage}
+
+Of course, the goal of elaborations is not to write handlers in a different way, but to encode higher-order effects. Since elaborations elaborate into algebraic effects, a row of algebraic effects must be specified. As a silly example, we can elaborate the higher-order \el{Val!} into \el{Val}, simply replacing occurrences of \el{val!()} with \el{val()};
+
+\begin{lstlisting}[language=elaine,style=fancy]
+effect Val!{
+    val!(): Int
+}
+
+effect Val {
+    val(): Int
+}
+
+let hVal = fn(x) { 
+    handler {
+        val() { resume(x) }
+    }
+};
+
+let eVal = elaboration Val! -> <Val> {
+    val!() { val() }
+};
+
+let main = handle[hVal] elab[eVal] val!();
+\end{lstlisting}
+
+The higher-order operations differ from other functions and algebraic operations because they have call-by-name semantics; the arguments are not evaluated before they are passed to the elaboration. Hence, the arguments can be computations, even effectful computations.
+
+This allows us to manipulate computations directly. For example, it is possible to wrap the computation in a handler within an elaboration.
+
+\begin{lstlisting}[langauge=elaine,style=fancy]
+use std;
+
+effect Ask {
+    ask(): Int
+}
+
+effect Local! {
+    local!(fn(Int) Int, c) : c
+}
+
+let eLocal = elaboration Local! -> <Ask> {
+    local!(f, c) {
+        handle[hAsk(f(ask()))] c
+    }
+};
+
+let hAsk = fn(x) {
+    handler {
+        ask() { resume(5) }
+    }
+};
+
+let main = handle[hAsk(5)] elab[eLocal] local!(
+    fn(x) { mul(2, x) },
+    add(ask(), ask())
+);
+\end{lstlisting}
+
+This is how higher-order operations such as \el{local} and \el{catch} are supported in Elaine.

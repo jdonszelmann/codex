@@ -1,0 +1,18 @@
+[package]
+name = "sources"
+authors = ["Jonathan Dönszelmann <jonabent@gmail.com>"]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "utilities to deal with a directory of source files"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tracing = "0.1.37"
+tempdir = "0.3.7"
+thiserror = "1.0.40"
+itertools = "0.10.5"
+
+[dev-dependencies]
+code-exploration-services-tests = {path="../code-exploration-services-tests"}

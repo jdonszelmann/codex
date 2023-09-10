@@ -1,0 +1,33 @@
+use std;
+
+effect State {
+    get() Int
+    put(Int) () 
+}
+
+let hState = handler {
+    return(x) {
+        fn(s: Int) {
+            x
+        }
+    }
+    get() {
+        fn(s: Int) {
+            let f = resume(s);
+            f(s)
+        }
+    }
+    put(n) {
+        fn(s: Int) {
+            let f = resume(());
+            f(n)
+        }
+    }
+};
+
+let body = handle[hState] {
+    put(add(get(), 1));
+    get()
+};
+
+let main = body(5);
